@@ -65,10 +65,10 @@ namespace PalmControllerServer.Services
         }
 
         // 停止服务器
-        public async Task StopAsync()
+        public Task StopAsync()
         {
             if (!_isRunning)
-                return;
+                return Task.CompletedTask;
 
             try
             {
@@ -92,6 +92,8 @@ namespace PalmControllerServer.Services
             {
                 LogService.Instance.Error("Error stopping socket server", ex, "Socket");
             }
+            
+            return Task.CompletedTask;
         }
 
         // 监听客户端连接
@@ -261,7 +263,7 @@ namespace PalmControllerServer.Services
             }
             catch (Exception ex)
             {
-                LogService.Instance.Warning("Failed to get local IP address", "Socket");
+                LogService.Instance.Warning($"Failed to get local IP address: {ex.Message}", "Socket");
             }
             return "127.0.0.1";
         }

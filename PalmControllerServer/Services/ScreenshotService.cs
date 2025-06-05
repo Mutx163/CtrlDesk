@@ -70,7 +70,7 @@ namespace PalmControllerServer.Services
 
             try
             {
-                var bounds = Screen.PrimaryScreen.Bounds;
+                var bounds = Screen.PrimaryScreen?.Bounds ?? throw new InvalidOperationException("Primary screen not available");
                 var screenshot = new Bitmap(bounds.Width, bounds.Height, PixelFormat.Format32bppArgb);
 
                 using var graphics = Graphics.FromImage(screenshot);
@@ -163,7 +163,7 @@ namespace PalmControllerServer.Services
                 // 如果没有指定区域，默认为屏幕中央的一半区域
                 if (width == 0 || height == 0)
                 {
-                    var bounds = Screen.PrimaryScreen.Bounds;
+                    var bounds = Screen.PrimaryScreen?.Bounds ?? throw new InvalidOperationException("Primary screen not available");
                     width = bounds.Width / 2;
                     height = bounds.Height / 2;
                     x = bounds.Width / 4;

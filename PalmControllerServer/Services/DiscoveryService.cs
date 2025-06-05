@@ -61,10 +61,10 @@ namespace PalmControllerServer.Services
             }
         }
 
-        public async Task StopAsync()
+        public Task StopAsync()
         {
             if (!_isRunning)
-                return;
+                return Task.CompletedTask;
 
             try
             {
@@ -80,6 +80,8 @@ namespace PalmControllerServer.Services
             {
                 LogService.Instance.Error("Error stopping discovery service", ex, "Discovery");
             }
+            
+            return Task.CompletedTask;
         }
 
         // 定期广播服务信息
@@ -269,7 +271,7 @@ namespace PalmControllerServer.Services
             }
             catch (Exception ex)
             {
-                LogService.Instance.Warning("Failed to get local IP address", "Discovery");
+                LogService.Instance.Warning($"Failed to get local IP address: {ex.Message}", "Discovery");
             }
             return "127.0.0.1";
         }

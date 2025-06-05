@@ -165,7 +165,7 @@ namespace PalmControllerServer.Services
                     break;
             }
 
-            LogService.Instance.SystemControl(action, "unknown", true);
+            LogService.Instance.SystemControl(action ?? "unknown", "unknown", true);
         }
 
         // 处理键盘控制
