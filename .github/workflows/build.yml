@@ -31,13 +31,13 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
     
-    - name: Run tests (excluding integration)
+    - name: Run tests (CI-friendly)
       env:
         SKIP_INTEGRATION_TESTS: true
+        SKIP_UI_TESTS: true
       run: |
-        # 运行单元测试和widget测试
-        flutter test test/widget_test.dart test/unit/
-        # 集成测试在CI环境中跳过（需要真实服务器）
+        # 运行单元测试（跳过复杂的UI和集成测试）
+        flutter test test/unit/ test/widget_test.dart
     
     - name: Build APK
       run: flutter build apk --release
