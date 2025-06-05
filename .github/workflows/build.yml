@@ -45,7 +45,7 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: android-apk
+        name: PalmController-Android-APK
         path: palm_controller_app/build/app/outputs/flutter-apk/app-release.apk
 
   build-windows:
@@ -74,5 +74,5 @@ jobs:
     - name: Upload Windows build
       uses: actions/upload-artifact@v4
       with:
-        name: windows-server
+        name: PalmController-Windows-Server
         path: PalmControllerServer/publish/ 

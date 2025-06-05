@@ -686,8 +686,8 @@ namespace PalmControllerServer.Services
                     return 0.5f;
                 }
 
-                IMMDevice speakers = null;
-                IAudioEndpointVolume masterVol = null;
+                IMMDevice? speakers = null;
+                IAudioEndpointVolume? masterVol = null;
                 
                 try
                 {
@@ -757,8 +757,8 @@ namespace PalmControllerServer.Services
                     return false;
                 }
 
-                IMMDevice speakers = null;
-                IAudioEndpointVolume masterVol = null;
+                IMMDevice? speakers = null;
+                IAudioEndpointVolume? masterVol = null;
                 
                 try
                 {
@@ -822,8 +822,8 @@ namespace PalmControllerServer.Services
                     return;
                 }
 
-                IMMDevice speakers = null;
-                IAudioEndpointVolume masterVol = null;
+                IMMDevice? speakers = null;
+                IAudioEndpointVolume? masterVol = null;
                 
                 try
                 {
@@ -888,8 +888,8 @@ namespace PalmControllerServer.Services
                     return;
                 }
 
-                IMMDevice speakers = null;
-                IAudioEndpointVolume masterVol = null;
+                IMMDevice? speakers = null;
+                IAudioEndpointVolume? masterVol = null;
                 
                 try
                 {
