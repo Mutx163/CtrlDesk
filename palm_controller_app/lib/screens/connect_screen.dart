@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../models/connection_config.dart';
 import '../providers/connection_provider.dart';
 import '../services/socket_service.dart';
+import '../services/discovery_service.dart';
 
 class ConnectScreen extends ConsumerStatefulWidget {
   const ConnectScreen({super.key});
@@ -22,6 +23,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
   final _passwordController = TextEditingController();
   final _uuid = const Uuid();
   bool _showPermissionCard = true;
+  
+  // 设备发现相关状态
+  final DiscoveryService _discoveryService = DiscoveryService();
+  List<DiscoveredDevice> _discoveredDevices = [];
+  bool _isScanning = false;
+  String? _scanError;
 
   @override
   void initState() {
@@ -38,8 +45,21 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             context.go('/');
           }
         });
+        // 检查权限状态，决定是否显示权限卡片
+        _checkPermissionStatus();
       }
     });
+  }
+
+  // 检查权限状态，决定是否显示权限卡片
+  Future<void> _checkPermissionStatus() async {
+    final status = await Permission.locationWhenInUse.status;
+    if (mounted) {
+      setState(() {
+        // 只有在权限被拒绝且用户没有手动关闭卡片时才显示
+        _showPermissionCard = (status == PermissionStatus.denied || status == PermissionStatus.permanentlyDenied);
+      });
+    }
   }
 
   @override
@@ -48,6 +68,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     _ipController.dispose();
     _portController.dispose();
     _passwordController.dispose();
+    _discoveryService.dispose();
     super.dispose();
   }
 
@@ -102,6 +123,49 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         ),
       );
     }
+  }
+
+  // 手动扫描设备
+  Future<void> _scanForDevices() async {
+    if (_isScanning) return;
+
+    setState(() {
+      _isScanning = true;
+      _scanError = null;
+      _discoveredDevices.clear();
+    });
+
+    try {
+      final devices = await _discoveryService.scanOnce(timeout: const Duration(seconds: 8));
+      setState(() {
+        _discoveredDevices = devices;
+        _isScanning = false;
+      });
+
+      if (devices.isEmpty) {
+        setState(() {
+          _scanError = '未发现任何设备，请确保PC端程序正在运行';
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('发现 ${devices.length} 个设备'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isScanning = false;
+        _scanError = '扫描失败: $e';
+      });
+    }
+  }
+
+  // 连接到发现的设备
+  Future<void> _connectToDiscoveredDevice(DiscoveredDevice device) async {
+    final config = device.toConnectionConfig();
+    await _connectToServer(config);
   }
 
   Widget _buildPermissionCard() {
@@ -167,6 +231,168 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     );
   }
 
+  Widget _buildDeviceDiscoveryCard() {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.radar,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '设备发现',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const Spacer(),
+                FilledButton.icon(
+                  onPressed: _isScanning ? null : _scanForDevices,
+                  icon: _isScanning 
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.search, size: 18),
+                  label: Text(_isScanning ? '扫描中...' : '扫描设备'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_scanError != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _scanError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (_discoveredDevices.isNotEmpty) ...[
+              Text(
+                '发现的设备 (${_discoveredDevices.length})',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...(_discoveredDevices.map((device) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.computer,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    device.hostName,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${device.ipAddress}:${device.port}'),
+                      Text(
+                        '发现时间: ${_formatDiscoveryTime(device.discoveredAt)}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  trailing: FilledButton(
+                    onPressed: () => _connectToDiscoveredDevice(device),
+                    child: const Text('连接'),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                ),
+              ))),
+            ] else if (!_isScanning && _scanError == null) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.devices_other,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '点击"扫描设备"查找局域网内的PC',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.outline,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDiscoveryTime(DateTime time) {
+    final now = DateTime.now();
+    final diff = now.difference(time);
+    
+    if (diff.inSeconds < 10) {
+      return '刚刚';
+    } else if (diff.inSeconds < 60) {
+      return '${diff.inSeconds}秒前';
+    } else if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}分钟前';
+    } else {
+      return '${diff.inHours}小时前';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final connectionConfigs = ref.watch(connectionConfigProvider);
@@ -209,6 +435,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           children: [
             // 权限说明卡片
             _buildPermissionCard(),
+            
+            // 设备发现卡片
+            _buildDeviceDiscoveryCard(),
             
             // 新连接表单
             Card(

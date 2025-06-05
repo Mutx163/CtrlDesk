@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace PalmControllerServer.Services
 {
@@ -103,14 +104,24 @@ namespace PalmControllerServer.Services
             {
                 try
                 {
-                    // 广播到整个局域网
-                    var broadcastEndpoint = new IPEndPoint(IPAddress.Broadcast, _discoveryPort);
+                    // 获取本机所在的网段进行广播
+                    var broadcastAddresses = GetBroadcastAddresses(localIP);
                     
-                    using var broadcastClient = new UdpClient();
-                    broadcastClient.EnableBroadcast = true;
-                    await broadcastClient.SendAsync(data, data.Length, broadcastEndpoint);
-
-                    LogService.Instance.Debug($"Broadcasted service info: {localIP}:{_servicePort}", "Discovery");
+                    foreach (var broadcastAddress in broadcastAddresses)
+                    {
+                        try
+                        {
+                            using var broadcastClient = new UdpClient();
+                            broadcastClient.EnableBroadcast = true;
+                            await broadcastClient.SendAsync(data, data.Length, broadcastAddress);
+                            
+                            LogService.Instance.Debug($"Broadcasted service info to {broadcastAddress}: {localIP}:{_servicePort}", "Discovery");
+                        }
+                        catch (Exception ex)
+                        {
+                            LogService.Instance.Debug($"Failed to broadcast to {broadcastAddress}: {ex.Message}", "Discovery");
+                        }
+                    }
 
                     // 每3秒广播一次
                     await Task.Delay(3000, cancellationToken);
@@ -125,6 +136,60 @@ namespace PalmControllerServer.Services
                     await Task.Delay(5000, cancellationToken); // 出错时延长间隔
                 }
             }
+        }
+
+        // 获取广播地址列表
+        private List<IPEndPoint> GetBroadcastAddresses(string localIP)
+        {
+            var addresses = new List<IPEndPoint>();
+
+            try
+            {
+                // 1. 基于本机IP计算网段广播地址
+                var ipParts = localIP.Split('.');
+                if (ipParts.Length == 4)
+                {
+                    var networkBroadcast = $"{ipParts[0]}.{ipParts[1]}.{ipParts[2]}.255";
+                    addresses.Add(new IPEndPoint(IPAddress.Parse(networkBroadcast), _discoveryPort));
+                    LogService.Instance.Info($"Added network broadcast address: {networkBroadcast}", "Discovery");
+                }
+
+                // 2. 添加常见的局域网广播地址作为备用
+                var commonNetworks = new[]
+                {
+                    "192.168.1.255",
+                    "192.168.0.255", 
+                    "192.168.123.255",
+                    "10.0.0.255",
+                    "172.16.0.255"
+                };
+
+                foreach (var network in commonNetworks)
+                {
+                    var endpoint = new IPEndPoint(IPAddress.Parse(network), _discoveryPort);
+                    if (!addresses.Any(a => a.Address.Equals(endpoint.Address)))
+                    {
+                        addresses.Add(endpoint);
+                    }
+                }
+
+                // 3. 如果都失败了，使用全局广播作为最后手段
+                if (addresses.Count == 0)
+                {
+                    addresses.Add(new IPEndPoint(IPAddress.Broadcast, _discoveryPort));
+                    LogService.Instance.Warning("Using global broadcast as fallback", "Discovery");
+                }
+
+                LogService.Instance.Info($"Will broadcast to {addresses.Count} addresses", "Discovery");
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Warning($"Error calculating broadcast addresses: {ex.Message}", "Discovery");
+                // 使用全局广播作为备用
+                addresses.Add(new IPEndPoint(IPAddress.Broadcast, _discoveryPort));
+            }
+
+            return addresses;
         }
 
         // 处理发现请求

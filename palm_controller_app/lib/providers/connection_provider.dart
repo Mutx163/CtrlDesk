@@ -122,9 +122,27 @@ class ConnectionConfigNotifier extends StateNotifier<List<ConnectionConfig>> {
 
   // 更新最后连接时间
   Future<void> updateLastConnected(String configId) async {
-    final updatedConfig = state.firstWhere((config) => config.id == configId);
-    final newConfig = updatedConfig.copyWith(lastConnected: DateTime.now());
-    await updateConfig(newConfig);
+    try {
+      final updatedConfig = state.firstWhere((config) => config.id == configId);
+      final newConfig = updatedConfig.copyWith(lastConnected: DateTime.now());
+      await updateConfig(newConfig);
+    } catch (e) {
+      // 配置不存在时（比如通过设备发现临时连接），忽略更新操作
+      // 这是正常情况，不需要记录错误
+    }
+  }
+
+  // 更新连接时间或添加新配置（解决设备发现连接的BadStateNoElement问题）
+  Future<void> updateOrAddConfig(ConnectionConfig config) async {
+    try {
+      // 尝试找到现有配置并更新时间
+      final existingConfig = state.firstWhere((c) => c.id == config.id);
+      final updatedConfig = existingConfig.copyWith(lastConnected: DateTime.now());
+      await updateConfig(updatedConfig);
+    } catch (e) {
+      // 配置不存在，添加新配置（常见于设备发现连接）
+      await addConfig(config.copyWith(lastConnected: DateTime.now()));
+    }
   }
 
   // 获取最近连接的配置（用于自动重连）
@@ -269,8 +287,11 @@ class ConnectionManagerNotifier extends StateNotifier<AsyncValue<bool>> {
       if (success) {
         // 更新当前连接配置
         ref.read(currentConnectionProvider.notifier).state = config;
-        // 更新最后连接时间
-        await ref.read(connectionConfigProvider.notifier).updateLastConnected(config.id);
+        
+        // 尝试更新最后连接时间，如果配置不存在（比如设备发现连接），则自动添加
+        final configNotifier = ref.read(connectionConfigProvider.notifier);
+        await configNotifier.updateOrAddConfig(config);
+        
         state = const AsyncValue.data(true);
         
         // 连接成功后自动导航到控制界面
