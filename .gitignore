@@ -1,0 +1,52 @@
+# === Flutter/Dart related ===
+palm_controller_app/.dart_tool/
+palm_controller_app/.flutter-plugins
+palm_controller_app/.flutter-plugins-dependencies
+palm_controller_app/.pub-cache/
+palm_controller_app/.pub/
+palm_controller_app/build/
+palm_controller_app/ios/Flutter/.last_build_id
+palm_controller_app/android/app/debug
+palm_controller_app/android/app/profile
+palm_controller_app/android/app/release
+
+# === .NET related ===
+PalmControllerServer/bin/
+PalmControllerServer/obj/
+PalmControllerServer/*.user
+PalmControllerServer/*.suo
+PalmControllerServer/*.sln.docstates
+PalmControllerServer/[Dd]ebug/
+PalmControllerServer/[Rr]elease/
+PalmControllerServer/x64/
+PalmControllerServer/[Bb]in/
+PalmControllerServer/[Oo]bj/
+PalmControllerServer/packages/
+PalmControllerServer/*.nupkg
+PalmControllerServer/*.snupkg
+
+# === IDE and OS ===
+.vs/
+.vscode/launch.json
+.vscode/tasks.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# === Logs and temp files ===
+*.log
+*.tmp
+*.temp
+logs/
+
+# === Project AI Knowledge (可选) ===
+.project_ai_knowledge/
+
+# === Windows specific ===
+*.exe
+*.dll
+*.pdb
+!PalmControllerServer/*.dll
+!PalmControllerServer/*.exe 
