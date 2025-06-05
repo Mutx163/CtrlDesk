@@ -132,122 +132,502 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: connectionStatus == ConnectionStatus.connected
-            ? _buildControlCenterInterface(context, currentConnection)
+            ? _buildMediaControlCenter(context, currentConnection)
             : _buildNotConnectedView(context),
       ),
     );
   }
 
-  /// 直接操作控制中心界面 - 方案A
-  Widget _buildControlCenterInterface(BuildContext context, dynamic currentConnection) {
-    return Column(
-      children: [
-        // 顶部状态栏
-        _buildTopStatusBar(context, currentConnection),
+  /// 媒体控制中心界面 - 优化的媒体控制体验
+  Widget _buildMediaControlCenter(BuildContext context, dynamic currentConnection) {
+    return CustomScrollView(
+      slivers: [
+        // 顶部连接状态
+        SliverToBoxAdapter(
+          child: _buildConnectionHeader(context, currentConnection),
+        ),
         
-        // 主要控制区域 - 可滚动但优化为一屏显示
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // 媒体控制区域 - 最高优先级
-                _buildMediaControlSection(context),
-                const SizedBox(height: 16),
-                
-                // 系统快捷操作区域
-                _buildSystemShortcutsSection(context),
-                const SizedBox(height: 16),
-                
-                // 常用快捷键区域
-                _buildCommonShortcutsSection(context),
-                const SizedBox(height: 16),
-                
-                // 快速输入区域
-                _buildQuickInputSection(context),
-                const SizedBox(height: 80), // 为底部导航栏留出空间
-              ],
-            ),
-          ),
+        // 当前播放信息卡片
+        SliverToBoxAdapter(
+          child: _buildNowPlayingCard(context),
+        ),
+        
+        // 媒体控制按钮
+        SliverToBoxAdapter(
+          child: _buildMediaControls(context),
+        ),
+        
+        // 音量控制
+        SliverToBoxAdapter(
+          child: _buildVolumeControl(context),
+        ),
+        
+        // 快速操作面板
+        SliverToBoxAdapter(
+          child: _buildQuickActionsPanel(context),
+        ),
+        
+        // 系统状态概览
+        SliverToBoxAdapter(
+          child: _buildSystemStatusOverview(context),
+        ),
+        
+        // 底部间距
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
         ),
       ],
     );
   }
 
-  /// 精简顶部状态栏
-  Widget _buildTopStatusBar(BuildContext context, dynamic currentConnection) {
+  /// 连接状态头部
+  Widget _buildConnectionHeader(BuildContext context, dynamic currentConnection) {
     return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-          ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFE91E63).withOpacity(0.1),
+            const Color(0xFFE91E63).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE91E63).withOpacity(0.2),
+          width: 1,
         ),
       ),
       child: Row(
         children: [
-          // 连接状态
+          // 媒体图标
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: const Color(0xFFE91E63).withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.green.withOpacity(0.3)),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: const Icon(
+              Icons.music_note_rounded,
+              color: Color(0xFFE91E63),
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // 标题和连接信息
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
+                Text(
+                  '媒体控制中心',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFE91E63),
                   ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  '已连接',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.green.shade700,
-                    fontWeight: FontWeight.w600,
-                  ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      currentConnection?.name ?? 'Windows PC',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          
-          const SizedBox(width: 12),
-          
-          // 设备名称
-          Expanded(
-            child: Text(
-              currentConnection?.name ?? 'Windows PC',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              overflow: TextOverflow.ellipsis,
+        ],
+      ),
+    );
+  }
+
+  /// 当前播放信息卡片
+  Widget _buildNowPlayingCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE91E63).withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE91E63).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // 专辑封面占位
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE91E63).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.music_note_rounded,
+              color: Color(0xFFE91E63),
+              size: 30,
             ),
           ),
+          const SizedBox(width: 16),
           
-          // 设置和断开按钮
-          IconButton(
-            onPressed: () => context.push('/settings'),
-            icon: const Icon(Icons.settings_outlined, size: 20),
-            tooltip: '设置',
-            visualDensity: VisualDensity.compact,
+          // 歌曲信息
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '当前播放',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Windows 媒体播放器',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '准备播放音乐或视频',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
-          IconButton(
-            onPressed: () {
-              ref.read(connectionManagerProvider.notifier).disconnect();
-            },
-            icon: const Icon(Icons.power_settings_new, size: 20),
-            tooltip: '断开',
-            color: Theme.of(context).colorScheme.error,
-            visualDensity: VisualDensity.compact,
+        ],
+      ),
+    );
+  }
+
+  /// 媒体控制按钮
+  Widget _buildMediaControls(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE91E63).withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE91E63).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildMediaButton(
+            context,
+            icon: Icons.skip_previous_rounded,
+            onPressed: () => _sendMediaControl('previous'),
+            size: 48,
+          ),
+          _buildMediaButton(
+            context,
+            icon: Icons.play_arrow_rounded,
+            onPressed: () => _sendMediaControl('play_pause'),
+            size: 64,
+            isPrimary: true,
+          ),
+          _buildMediaButton(
+            context,
+            icon: Icons.skip_next_rounded,
+            onPressed: () => _sendMediaControl('next'),
+            size: 48,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 音量控制
+  Widget _buildVolumeControl(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE91E63).withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE91E63).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Consumer(
+        builder: (context, ref, child) {
+          final volumeState = ref.watch(volumeStateProvider);
+          
+          String volumeText;
+          double volumeProgress;
+
+          if (volumeState.volume == null) {
+            volumeText = '获取中...';
+            volumeProgress = 0.0;
+          } else if (volumeState.isMuted) {
+            volumeText = '静音';
+            volumeProgress = 0.0;
+          } else {
+            final volumePercentage = (volumeState.volume! * 100).round();
+            volumeText = '$volumePercentage%';
+            volumeProgress = volumeState.volume!;
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.volume_up_rounded,
+                    color: const Color(0xFFE91E63),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '音量控制',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFFE91E63),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    volumeText,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: volumeState.isMuted ? Colors.red : const Color(0xFFE91E63),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _buildMediaButton(
+                    context,
+                    icon: Icons.volume_down_rounded,
+                    onPressed: () => _sendMediaControl('volume_down'),
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: volumeState.isMuted 
+                            ? Colors.red 
+                            : const Color(0xFFE91E63),
+                        inactiveTrackColor: const Color(0xFFE91E63).withOpacity(0.3),
+                        thumbColor: volumeState.isMuted 
+                            ? Colors.red 
+                            : const Color(0xFFE91E63),
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                        trackHeight: 6,
+                      ),
+                      child: Slider(
+                        value: volumeProgress,
+                        min: 0.0,
+                        max: 1.0,
+                        onChanged: volumeState.volume == null ? null : (value) {
+                          ref.read(volumeStateProvider.notifier).updateVolume(value);
+                        },
+                        onChangeEnd: volumeState.volume == null ? null : (value) {
+                          _setSystemVolume(value);
+                          _requestVolumeStatusDelayed();
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildMediaButton(
+                    context,
+                    icon: Icons.volume_up_rounded,
+                    onPressed: () => _sendMediaControl('volume_up'),
+                    size: 32,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildMediaButton(
+                    context,
+                    icon: volumeState.isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                    onPressed: () => _sendMediaControl('mute'),
+                    size: 32,
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// 快速操作面板
+  Widget _buildQuickActionsPanel(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE91E63).withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE91E63).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.flash_on_rounded,
+                color: const Color(0xFFE91E63),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '快速操作',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFE91E63),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 4,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1,
+            children: [
+              _buildQuickActionButton('截图', Icons.camera_alt_rounded, const Color(0xFFFF5722), () => context.go('/tools')),
+              _buildQuickActionButton('锁屏', Icons.lock_rounded, const Color(0xFF2196F3), () => _sendSystemControl('lock')),
+              _buildQuickActionButton('显示', Icons.monitor_rounded, const Color(0xFF4CAF50), () => _sendSystemControl('display')),
+              _buildQuickActionButton('休眠', Icons.bedtime_rounded, const Color(0xFF9C27B0), () => _sendSystemControl('sleep')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 系统状态概览
+  Widget _buildSystemStatusOverview(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE91E63).withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFE91E63).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.computer_rounded,
+                color: const Color(0xFFE91E63),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'PC状态',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFE91E63),
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () => context.go('/tools'),
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('详细', style: TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatusItem('CPU', '45%', Colors.green),
+              ),
+              Expanded(
+                child: _buildStatusItem('内存', '8.2GB', Colors.orange),
+              ),
+              Expanded(
+                child: _buildStatusItem('网络', '50M', Colors.green),
+              ),
+              Expanded(
+                child: _buildStatusItem('温度', '42°C', Colors.green),
+              ),
+            ],
           ),
         ],
       ),
@@ -838,6 +1218,77 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 构建快速操作按钮
+  Widget _buildQuickActionButton(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onPressed,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: color,
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建状态项
+  Widget _buildStatusItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: color.withOpacity(0.7),
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

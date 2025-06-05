@@ -7,301 +7,331 @@ import '../services/socket_service.dart';
 // 当前导航索引Provider
 final navigationIndexProvider = StateProvider<int>((ref) => 0);
 
-// 更多菜单展开状态Provider
-final moreMenuExpandedProvider = StateProvider<bool>((ref) => false);
+// PageController Provider - 用于页面滑动控制
+final pageControllerProvider = Provider<PageController?>((ref) => null);
 
+// 动态智能导航栏组件
 class BottomNavigationBarWidget extends ConsumerWidget {
   const BottomNavigationBarWidget({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentIndex = ref.watch(navigationIndexProvider);
     final connectionStatus = ref.watch(connectionStatusProvider);
-    final isMoreExpanded = ref.watch(moreMenuExpandedProvider);
+    final currentIndex = ref.watch(navigationIndexProvider);
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.elasticOut,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         border: Border(
           top: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
           ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 主导航栏
-            SizedBox(
-              height: 80,
-              child: Row(
-                children: [
-                  // 主页
-                  _buildNavItem(
-                    context,
-                    ref,
-                    0,
-                    Icons.home_rounded,
-                    '主页',
-                    '/control',
-                    hasIndicator: connectionStatus == ConnectionStatus.connected,
-                  ),
-                  // 触摸板
-                  _buildNavItem(
-                    context,
-                    ref,
-                    1,
-                    Icons.touch_app_rounded,
-                    '触摸板',
-                    '/touchpad',
-                  ),
-                  // 键盘
-                  _buildNavItem(
-                    context,
-                    ref,
-                    2,
-                    Icons.keyboard_rounded,
-                    '键盘',
-                    '/keyboard',
-                  ),
-                  // 截图
-                  _buildNavItem(
-                    context,
-                    ref,
-                    3,
-                    Icons.camera_alt_rounded,
-                    '截图',
-                    '/screenshot',
-                  ),
-                  // 监控
-                  _buildNavItem(
-                    context,
-                    ref,
-                    4,
-                    Icons.monitor_heart_rounded,
-                    '监控',
-                    '/monitor',
-                  ),
-                  // 更多按钮
-                  _buildMoreButton(context, ref),
-                ],
-              ),
-            ),
-            
-            // 展开的更多菜单
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: isMoreExpanded ? 80 : 0,
-              child: isMoreExpanded
-                  ? Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                        border: Border(
-                          top: BorderSide(
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          // 系统
-                          _buildNavItem(
-                            context,
-                            ref,
-                            5,
-                            Icons.settings_power_rounded,
-                            '系统',
-                            '/system',
-                          ),
-                          // 连接
-                          _buildNavItem(
-                            context,
-                            ref,
-                            6,
-                            connectionStatus == ConnectionStatus.connected 
-                                ? Icons.wifi_rounded 
-                                : Icons.wifi_off_rounded,
-                            '连接',
-                            '/connect',
-                            hasIndicator: connectionStatus == ConnectionStatus.connecting,
-                          ),
-                          // 空白占位
-                          Expanded(child: Container()),
-                          Expanded(child: Container()),
-                          // 关闭按钮
-                          _buildCloseButton(context, ref),
-                        ],
-                      ),
-                    )
-                  : Container(),
-            ),
-          ],
+        child: Container(
+          height: 80,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: connectionStatus == ConnectionStatus.connected
+              ? _buildConnectedNavigation(context, ref, currentIndex)
+              : _buildDisconnectedNavigation(context, ref, currentIndex),
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(
-    BuildContext context,
-    WidgetRef ref,
-    int index,
-    IconData icon,
-    String label,
-    String route, {
-    bool hasIndicator = false,
-  }) {
-    final currentIndex = ref.watch(navigationIndexProvider);
-    final isSelected = currentIndex == index;
-    final colorScheme = Theme.of(context).colorScheme;
+  /// 已连接状态：4栏导航 (媒体、触摸、键盘、工具)
+  Widget _buildConnectedNavigation(BuildContext context, WidgetRef ref, int currentIndex) {
+    final navItems = [
+      _NavItem(
+        icon: Icons.music_note_rounded,
+        activeIcon: Icons.music_note,
+        label: '媒体',
+        route: '/control',
+        color: const Color(0xFFE91E63), // 媒体-玫红
+      ),
+      _NavItem(
+        icon: Icons.touch_app_outlined,
+        activeIcon: Icons.touch_app_rounded,
+        label: '触摸',
+        route: '/touchpad',
+        color: const Color(0xFF9C27B0), // 触摸-紫色
+      ),
+      _NavItem(
+        icon: Icons.keyboard_outlined,
+        activeIcon: Icons.keyboard_rounded,
+        label: '键盘',
+        route: '/keyboard',
+        color: const Color(0xFF3F51B5), // 键盘-靛蓝
+      ),
+      _NavItem(
+        icon: Icons.build_outlined,
+        activeIcon: Icons.build_rounded,
+        label: '工具',
+        route: '/tools',
+        color: const Color(0xFFFF9800), // 工具-橙色
+      ),
+    ];
 
-    // 根据功能模块定义颜色
-    Color getItemColor() {
-      switch (index) {
-        case 0: return const Color(0xFF1976D2); // 主页 - 蓝色
-        case 1: return const Color(0xFF7B1FA2); // 触摸板 - 紫色
-        case 2: return const Color(0xFF388E3C); // 键盘 - 绿色
-        case 3: return const Color(0xFFF57C00); // 截图 - 橙色
-        case 4: return const Color(0xFFD32F2F); // 监控 - 红色
-        case 5: return const Color(0xFF5D4037); // 系统 - 灰色
-        case 6: return const Color(0xFF00796B); // 连接 - 青色
-        default: return colorScheme.primary;
-      }
-    }
+    return Row(
+      children: navItems.asMap().entries.map((entry) {
+        final index = entry.key;
+        final item = entry.value;
+        final isSelected = currentIndex == index;
 
-    final itemColor = getItemColor();
+        return Expanded(
+          child: _buildNavItemWidget(
+            context,
+            ref,
+            index,
+            item,
+            isSelected,
+          ),
+        );
+      }).toList(),
+    );
+  }
 
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            ref.read(navigationIndexProvider.notifier).state = index;
-            ref.read(moreMenuExpandedProvider.notifier).state = false;
-            context.go(route);
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isSelected 
-                        ? itemColor.withOpacity(0.15)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 24,
-                    color: isSelected 
-                        ? itemColor
-                        : colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-                // 状态指示器
-                if (hasIndicator)
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: index == 0 ? Colors.green : Colors.orange,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.surface,
-                          width: 1,
-                        ),
-                      ),
+  /// 未连接状态：2栏导航 (连接、设置)
+  Widget _buildDisconnectedNavigation(BuildContext context, WidgetRef ref, int currentIndex) {
+    final connectionStatus = ref.watch(connectionStatusProvider);
+    
+    final navItems = [
+      _NavItem(
+        icon: connectionStatus == ConnectionStatus.connecting 
+            ? Icons.wifi_find_outlined 
+            : Icons.wifi_off_outlined,
+        activeIcon: connectionStatus == ConnectionStatus.connecting
+            ? Icons.wifi_find_rounded
+            : Icons.wifi_outlined,
+        label: connectionStatus == ConnectionStatus.connecting ? '连接中' : '智能连接',
+        route: '/connect',
+        color: connectionStatus == ConnectionStatus.connecting 
+            ? const Color(0xFFFF9800) // 连接中-橙色
+            : const Color(0xFF4CAF50), // 连接-绿色
+        hasIndicator: connectionStatus == ConnectionStatus.connecting,
+      ),
+      _NavItem(
+        icon: Icons.settings_outlined,
+        activeIcon: Icons.settings_rounded,
+        label: '应用设置',
+        route: '/settings',
+        color: const Color(0xFF607D8B), // 设置-蓝灰
+      ),
+    ];
+
+    return Row(
+      children: navItems.asMap().entries.map((entry) {
+        final index = entry.key;
+        final item = entry.value;
+        final isSelected = currentIndex == index;
+
+        return Expanded(
+          child: _buildNavItemWidget(
+            context,
+            ref,
+            index,
+            item,
+            isSelected,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+     /// 构建导航项组件
+   Widget _buildNavItemWidget(
+     BuildContext context,
+     WidgetRef ref,
+     int index,
+     _NavItem item,
+     bool isSelected,
+   ) {
+     return Material(
+       color: Colors.transparent,
+       child: InkWell(
+         onTap: () {
+           // 尝试使用PageController进行滑动切换
+           final pageController = ref.read(pageControllerProvider);
+           if (pageController != null) {
+             // 使用PageView滑动切换
+             pageController.animateToPage(
+               index,
+               duration: const Duration(milliseconds: 300),
+               curve: Curves.easeInOut,
+             );
+           } else {
+             // 回退到路由切换（兼容性）
+             final routeToIndexMap = {
+               '/control': 0,
+               '/touchpad': 1,  
+               '/keyboard': 2,
+               '/tools': 3,
+               '/connect': 0, // 未连接状态的连接页面
+               '/settings': 1, // 未连接状态的设置页面
+             };
+             final navIndex = routeToIndexMap[item.route] ?? 0;
+             ref.read(navigationIndexProvider.notifier).state = navIndex;
+             context.go(item.route);
+           }
+         },
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? item.color.withOpacity(0.12)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 图标区域
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      isSelected ? item.activeIcon : item.icon,
+                      size: isSelected ? 28 : 24,
+                      color: isSelected 
+                          ? item.color
+                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  // 标签文字
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 200),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected 
+                          ? item.color
+                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    child: Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              
+              // 状态指示器 (连接中动画)
+              if (item.hasIndicator)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: _buildPulsingIndicator(item.color),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建脉冲指示器 (连接中状态)
+  Widget _buildPulsingIndicator(Color color) {
+    return _PulsingDot(color: color);
+  }
+}
+
+/// 脉冲动画组件
+class _PulsingDot extends StatefulWidget {
+  final Color color;
+
+  const _PulsingDot({required this.color});
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _animation = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _controller.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: 0.8 + (_animation.value * 0.4),
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: widget.color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: widget.color.withOpacity(0.4),
+                  blurRadius: 4 * _animation.value,
+                  spreadRadius: 2 * _animation.value,
+                ),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+}
 
-  Widget _buildMoreButton(BuildContext context, WidgetRef ref) {
-    final isExpanded = ref.watch(moreMenuExpandedProvider);
-    final colorScheme = Theme.of(context).colorScheme;
+/// 导航项数据模型
+class _NavItem {
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.route,
+    required this.color,
+    this.hasIndicator = false,
+  });
 
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            ref.read(moreMenuExpandedProvider.notifier).state = !isExpanded;
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isExpanded 
-                    ? colorScheme.primary.withOpacity(0.15)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: AnimatedRotation(
-                turns: isExpanded ? 0.5 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  Icons.more_horiz_rounded,
-                  size: 24,
-                  color: isExpanded 
-                      ? colorScheme.primary
-                      : colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCloseButton(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            ref.read(moreMenuExpandedProvider.notifier).state = false;
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.close_rounded,
-                size: 24,
-                color: colorScheme.onSurface.withOpacity(0.6),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final String route;
+  final Color color;
+  final bool hasIndicator;
 } 

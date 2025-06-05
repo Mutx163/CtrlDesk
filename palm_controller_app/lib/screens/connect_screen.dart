@@ -428,202 +428,583 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: _buildSmartConnectionView(context),
+    );
+  }
+
+  /// 智能连接界面
+  Widget _buildSmartConnectionView(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        // 头部标题
+        SliverToBoxAdapter(
+          child: _buildConnectionHeader(context),
+        ),
+        
+        // 权限卡片
+        SliverToBoxAdapter(
+          child: _buildPermissionCard(),
+        ),
+        
+        // 设备发现区域
+        SliverToBoxAdapter(
+          child: _buildDeviceDiscoverySection(context),
+        ),
+        
+        // 手动连接表单
+        SliverToBoxAdapter(
+          child: _buildManualConnectionForm(context),
+        ),
+        
+        // 连接历史
+        SliverToBoxAdapter(
+          child: _buildConnectionHistory(context),
+        ),
+        
+        // 底部间距
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
+      ],
+    );
+  }
+
+  /// 连接头部
+  Widget _buildConnectionHeader(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.green.withOpacity(0.1),
+            Colors.orange.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.green.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // 连接图标
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.wifi_rounded,
+              color: Colors.green,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // 标题和描述
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '智能连接',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '自动发现和连接您的Windows PC',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 设备发现区域
+  Widget _buildDeviceDiscoverySection(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.green.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.radar_rounded,
+                color: Colors.green,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '自动发现',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              const Spacer(),
+              if (_isScanning)
+                Container(
+                  width: 20,
+                  height: 20,
+                  child: const CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: _scanForDevices,
+                  icon: const Icon(Icons.search_rounded, size: 16),
+                  label: const Text('扫描设备'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // 发现的设备列表
+          if (_discoveredDevices.isNotEmpty)
+            ...(_discoveredDevices.map((device) => _buildDiscoveredDeviceCard(device)).toList())
+          else if (_scanError != null)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _scanError!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else if (!_isScanning)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.grey, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      '点击"扫描设备"自动发现网络中的PC',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+    /// 手动连接表单
+  Widget _buildManualConnectionForm(BuildContext context) {
+    final connectionManager = ref.watch(connectionManagerProvider);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.orange.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Form(
+        key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 权限说明卡片
-            _buildPermissionCard(),
+            Row(
+              children: [
+                Icon(
+                  Icons.input_rounded,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '手动连接',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             
-            // 设备发现卡片
-            _buildDeviceDiscoveryCard(),
+            // 连接名称
+            TextFormField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: '连接名称',
+                hintText: '例如：我的电脑',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '请输入连接名称';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
             
-            // 新连接表单
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            // IP地址
+            TextFormField(
+              controller: _ipController,
+              decoration: InputDecoration(
+                labelText: 'IP地址',
+                hintText: '例如：192.168.1.100',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return '请输入IP地址';
+                }
+                final ipRegex = RegExp(r'^(\d{1,3}\.){3}\d{1,3}$');
+                if (!ipRegex.hasMatch(value.trim())) {
+                  return '请输入有效的IP地址';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            
+            // 端口和密码
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _portController,
+                    decoration: InputDecoration(
+                      labelText: '端口',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return '请输入端口';
+                      }
+                      final port = int.tryParse(value.trim());
+                      if (port == null || port < 1 || port > 65535) {
+                        return '请输入有效的端口 (1-65535)';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: '密码 (可选)',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    obscureText: true,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            
+            // 连接按钮
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: connectionManager.isLoading ? null : () => _connectToServer(),
+                icon: connectionManager.isLoading 
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.link_rounded),
+                label: Text(connectionManager.isLoading ? '连接中...' : '连接'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            
+            // 连接错误显示
+            if (connectionManager.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withOpacity(0.2)),
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                        '添加新连接',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: '连接名称',
-                          hintText: '例如：我的电脑',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return '请输入连接名称';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _ipController,
-                        decoration: const InputDecoration(
-                          labelText: 'IP地址',
-                          hintText: '例如：192.168.1.100',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return '请输入IP地址';
-                          }
-                          // 简单的IP地址格式验证
-                          final ipRegex = RegExp(r'^(\d{1,3}\.){3}\d{1,3}$');
-                          if (!ipRegex.hasMatch(value.trim())) {
-                            return '请输入有效的IP地址';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _portController,
-                              decoration: const InputDecoration(
-                                labelText: '端口',
-                                border: OutlineInputBorder(),
-                              ),
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return '请输入端口';
-                                }
-                                final port = int.tryParse(value.trim());
-                                if (port == null || port < 1 || port > 65535) {
-                                  return '请输入有效的端口 (1-65535)';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _passwordController,
-                              decoration: const InputDecoration(
-                                labelText: '密码 (可选)',
-                                border: OutlineInputBorder(),
-                              ),
-                              obscureText: true,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: connectionManager.isLoading ? null : () => _connectToServer(),
-                          child: connectionManager.isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Text('连接'),
+                      Icon(Icons.error_outline, color: Colors.red, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '连接失败: ${connectionManager.error}',
+                          style: const TextStyle(color: Colors.red, fontSize: 12),
                         ),
                       ),
-                      // 显示连接错误
-                      connectionManager.hasError
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                '连接失败: ${connectionManager.error}',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
                     ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            // 连接历史记录
-            Text(
-              '连接历史',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: connectionConfigs.isEmpty
-                  ? const Center(
-                      child: Text(
-                        '暂无连接历史\n添加新连接开始使用',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
-                        ),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: connectionConfigs.length,
-                      itemBuilder: (context, index) {
-                        final config = connectionConfigs[index];
-                        return Card(
-                          child: ListTile(
-                            leading: const Icon(Icons.computer),
-                            title: Text(config.name),
-                            subtitle: Text('${config.ipAddress}:${config.port}'),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline),
-                                  onPressed: () async {
-                                    final confirmed = await showDialog<bool>(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('删除连接'),
-                                        content: Text('确定要删除连接 "${config.name}" 吗？'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.of(context).pop(false),
-                                            child: const Text('取消'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () => Navigator.of(context).pop(true),
-                                            child: const Text('删除'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                    if (confirmed == true) {
-                                      await ref.read(connectionConfigProvider.notifier).removeConfig(config.id);
-                                    }
-                                  },
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 连接历史
+  Widget _buildConnectionHistory(BuildContext context) {
+    final connectionConfigs = ref.watch(connectionConfigProvider);
+    final connectionManager = ref.watch(connectionManagerProvider);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.blue.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.history_rounded,
+                color: Colors.blue,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '连接历史',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // 历史记录列表
+          if (connectionConfigs.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.grey, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '暂无连接历史，添加新连接开始使用',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: connectionConfigs.map((config) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                  ),
+                ),
+                child: ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.computer, color: Colors.blue, size: 20),
+                  ),
+                  title: Text(
+                    config.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text('${config.ipAddress}:${config.port}'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        onPressed: () async {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('删除连接'),
+                              content: Text('确定要删除连接 "${config.name}" 吗？'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(false),
+                                  child: const Text('取消'),
                                 ),
-                                FilledButton(
-                                  onPressed: connectionManager.isLoading ? null : () => _connectToServer(config),
-                                  child: const Text('连接'),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(true),
+                                  child: const Text('删除'),
                                 ),
                               ],
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                          if (confirmed == true) {
+                            await ref.read(connectionConfigProvider.notifier).removeConfig(config.id);
+                          }
+                        },
+                      ),
+                      FilledButton.icon(
+                        onPressed: connectionManager.isLoading ? null : () => _connectToServer(config),
+                        icon: const Icon(Icons.link_rounded, size: 16),
+                        label: const Text('连接'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )).toList(),
             ),
-          ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  /// 发现的设备卡片
+  Widget _buildDiscoveredDeviceCard(DiscoveredDevice device) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.computer, color: Colors.green, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                                 Text(
+                   device.serviceName,
+                   style: const TextStyle(
+                     fontWeight: FontWeight.bold,
+                     color: Colors.green,
+                   ),
+                 ),
+                Text(
+                  '${device.ipAddress}:${device.port}',
+                  style: TextStyle(
+                    color: Colors.green.shade600,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: () => _connectToDiscoveredDevice(device),
+            icon: const Icon(Icons.link_rounded, size: 16),
+            label: const Text('连接'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ],
       ),
     );
   }

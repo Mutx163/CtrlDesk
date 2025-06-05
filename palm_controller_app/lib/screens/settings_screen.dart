@@ -129,109 +129,195 @@ class SettingsScreen extends ConsumerWidget {
     final settingsNotifier = ref.read(settingsProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置'),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        scrolledUnderElevation: 1,
+      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景色
+      body: _buildSettingsInterface(context, settings, settingsNotifier),
+    );
+  }
+
+  /// 应用设置页面 - 完整的设置管理体验
+  Widget _buildSettingsInterface(BuildContext context, AppSettings settings, SettingsNotifier settingsNotifier) {
+    return CustomScrollView(
+      slivers: [
+        // 设置头部
+        SliverToBoxAdapter(
+          child: _buildSettingsHeader(context),
+        ),
+        
+        // 原有设置内容
+        SliverToBoxAdapter(
+          child: _buildOldSettings(context, settings, settingsNotifier),
+        ),
+        
+        // 底部间距
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
+      ],
+    );
+  }
+
+  /// 设置页面头部
+  Widget _buildSettingsHeader(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF607D8B).withOpacity(0.1),
+            const Color(0xFF455A64).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF607D8B).withOpacity(0.2),
+          width: 1,
+        ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      child: Row(
         children: [
-          // 外观设置
-          _buildSectionCard(
-            context,
-            title: '外观设置',
-            icon: Icons.palette_outlined,
-            children: [
-              _buildThemeSelector(context, settings, settingsNotifier),
-            ],
+          // 设置图标
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF607D8B).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.settings_rounded,
+              color: Color(0xFF607D8B),
+              size: 28,
+            ),
           ),
+          const SizedBox(width: 16),
           
-          const SizedBox(height: 16),
-          
-          // 控制设置
-          _buildSectionCard(
-            context,
-            title: '控制设置',
-            icon: Icons.settings_input_component_outlined,
-            children: [
-              _buildSwitchTile(
-                context,
-                title: '触觉反馈',
-                subtitle: '操作时提供振动反馈',
-                value: settings.hapticFeedback,
-                onChanged: settingsNotifier.updateHapticFeedback,
-                icon: Icons.vibration,
-              ),
-              const Divider(height: 1),
-              _buildSensitivitySlider(context, settings, settingsNotifier),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // 连接设置
-          _buildSectionCard(
-            context,
-            title: '连接设置',
-            icon: Icons.wifi_outlined,
-            children: [
-              _buildSwitchTile(
-                context,
-                title: '自动重连',
-                subtitle: '连接断开时自动尝试重连',
-                value: settings.autoReconnect,
-                onChanged: settingsNotifier.updateAutoReconnect,
-                icon: Icons.sync,
-              ),
-              const Divider(height: 1),
-              _buildSwitchTile(
-                context,
-                title: '显示连接对话框',
-                subtitle: '连接时显示进度对话框',
-                value: settings.showConnectionDialog,
-                onChanged: settingsNotifier.updateShowConnectionDialog,
-                icon: Icons.chat_bubble_outline,
-              ),
-              const Divider(height: 1),
-              _buildTimeoutSelector(context, settings, settingsNotifier),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // 关于和操作
-          _buildSectionCard(
-            context,
-            title: '关于',
-            icon: Icons.info_outline,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.apps),
-                title: const Text('应用版本'),
-                subtitle: const Text('v1.0.0-alpha'),
-                onTap: () {
-                  _showAboutDialog(context);
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: Icon(Icons.refresh, color: Theme.of(context).colorScheme.primary),
-                title: Text(
-                  '恢复默认设置',
-                  style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          // 标题和描述
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '应用设置',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF607D8B),
+                  ),
                 ),
-                subtitle: const Text('重置所有设置为默认值'),
-                onTap: () => _showResetDialog(context, settingsNotifier),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  '个性化您的掌控者体验',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
           ),
-          
-          const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+
+  Widget _buildOldSettings(BuildContext context, AppSettings settings, SettingsNotifier settingsNotifier) {
+    return ListView(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      children: [
+        // 外观设置
+        _buildSectionCard(
+          context,
+          title: '外观设置',
+          icon: Icons.palette_outlined,
+          children: [
+            _buildThemeSelector(context, settings, settingsNotifier),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // 控制设置
+        _buildSectionCard(
+          context,
+          title: '控制设置',
+          icon: Icons.settings_input_component_outlined,
+          children: [
+            _buildSwitchTile(
+              context,
+              title: '触觉反馈',
+              subtitle: '操作时提供振动反馈',
+              value: settings.hapticFeedback,
+              onChanged: settingsNotifier.updateHapticFeedback,
+              icon: Icons.vibration,
+            ),
+            const Divider(height: 1),
+            _buildSensitivitySlider(context, settings, settingsNotifier),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // 连接设置
+        _buildSectionCard(
+          context,
+          title: '连接设置',
+          icon: Icons.wifi_outlined,
+          children: [
+            _buildSwitchTile(
+              context,
+              title: '自动重连',
+              subtitle: '连接断开时自动尝试重连',
+              value: settings.autoReconnect,
+              onChanged: settingsNotifier.updateAutoReconnect,
+              icon: Icons.sync,
+            ),
+            const Divider(height: 1),
+            _buildSwitchTile(
+              context,
+              title: '显示连接对话框',
+              subtitle: '连接时显示进度对话框',
+              value: settings.showConnectionDialog,
+              onChanged: settingsNotifier.updateShowConnectionDialog,
+              icon: Icons.chat_bubble_outline,
+            ),
+            const Divider(height: 1),
+            _buildTimeoutSelector(context, settings, settingsNotifier),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // 关于和操作
+        _buildSectionCard(
+          context,
+          title: '关于',
+          icon: Icons.info_outline,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.apps),
+              title: const Text('应用版本'),
+              subtitle: const Text('v1.0.0-alpha'),
+              onTap: () {
+                _showAboutDialog(context);
+              },
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(Icons.refresh, color: Theme.of(context).colorScheme.primary),
+              title: Text(
+                '恢复默认设置',
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
+              subtitle: const Text('重置所有设置为默认值'),
+              onTap: () => _showResetDialog(context, settingsNotifier),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 32),
+      ],
     );
   }
 

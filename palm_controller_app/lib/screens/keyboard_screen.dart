@@ -73,126 +73,149 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     final connectionStatus = ref.watch(connectionStatusProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: _buildAppBar(context),
-      body: SafeArea(
-        child: connectionStatus == ConnectionStatus.connected
-            ? _buildKeyboardInterface()
-            : _buildNotConnectedView(),
-      ),
+      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景色
+      body: connectionStatus == ConnectionStatus.connected
+          ? _buildKeyboardInputter(context)
+          : _buildNotConnectedView(),
     );
   }
 
-  /// 现代化应用栏
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      title: Text(
-        '键盘控制',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back_rounded,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        onPressed: () => context.pop(),
-      ),
-      actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.green.withOpacity(0.3),
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                '已连接',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildKeyboardInterface() {
+  /// 键盘输入器 - 完整的键盘控制体验
+  Widget _buildKeyboardInputter(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        // 顶部间距
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 16),
+        // 头部标题
+        SliverToBoxAdapter(
+          child: _buildKeyboardHeader(context),
         ),
         
-        // 文本输入区域
+        // 主要文本输入区域
         SliverToBoxAdapter(
-          child: _buildTextInputSection(),
+          child: _buildMainInputArea(context),
         ),
         
-        // 修饰键区域
+        // 修饰键控制面板
         SliverToBoxAdapter(
-          child: _buildModifierKeysSection(),
+          child: _buildModifierPanel(context),
         ),
         
-        // 常用快捷键区域
+        // 快捷键网格
         SliverToBoxAdapter(
-          child: _buildShortcutsSection(),
+          child: _buildShortcutGrid(context),
         ),
         
-        // 功能键区域
+        // 功能键面板
         SliverToBoxAdapter(
-          child: _buildFunctionKeysSection(),
+          child: _buildFunctionPanel(context),
         ),
         
-        // 方向键区域
+        // 方向键控制
         SliverToBoxAdapter(
-          child: _buildDirectionKeysSection(),
+          child: _buildDirectionControl(context),
         ),
         
         // 底部间距
         const SliverToBoxAdapter(
-          child: SizedBox(height: 24),
+          child: SizedBox(height: 100),
         ),
       ],
     );
   }
 
-  /// 文本输入区域
-  Widget _buildTextInputSection() {
+  /// 键盘头部
+  Widget _buildKeyboardHeader(BuildContext context) {
+    final currentConnection = ref.watch(currentConnectionProvider);
+    
     return Container(
       margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF3F51B5).withOpacity(0.1),
+            const Color(0xFF303F9F).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          // 键盘图标
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3F51B5).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.keyboard_rounded,
+              color: Color(0xFF3F51B5),
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // 标题和描述
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '键盘输入器',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF3F51B5),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      currentConnection?.name ?? 'Windows PC',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 主要输入区域
+  Widget _buildMainInputArea(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-          width: 2,
+          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: const Color(0xFF3F51B5).withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -201,264 +224,194 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 标题
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.keyboard_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+              Icon(
+                Icons.edit_rounded,
+                color: const Color(0xFF3F51B5),
+                size: 20,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Text(
                 '文本输入',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.primary,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF3F51B5),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 20),
-          
-          // 输入框
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-              ),
-            ),
-            child: TextField(
-              controller: _textController,
-              focusNode: _focusNode,
-              maxLines: null,
-              expands: true,
-              decoration: InputDecoration(
-                hintText: '在此输入文本内容...',
-                hintStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(16),
-              ),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
           ),
           const SizedBox(height: 16),
           
-          // 操作按钮
-          Row(
-            children: [
-              Expanded(
-                child: _buildPrimaryButton(
-                  icon: Icons.send_rounded,
-                  label: '发送文本',
-                  onPressed: () {
-                    _sendText(_textController.text);
-                    _textController.clear();
-                  },
-                ),
+          // 输入框
+          TextField(
+            controller: _textController,
+            focusNode: _focusNode,
+            decoration: InputDecoration(
+              hintText: '在此输入文本，回车发送到PC...',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: const Color(0xFF3F51B5).withOpacity(0.3)),
               ),
-              const SizedBox(width: 12),
-              _buildSecondaryButton(
-                icon: Icons.clear_rounded,
-                label: '清空',
-                onPressed: () => _textController.clear(),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF3F51B5), width: 2),
               ),
-            ],
+              contentPadding: const EdgeInsets.all(16),
+            ),
+            maxLines: 3,
+            onSubmitted: (text) {
+              _sendText(text);
+              _textController.clear();
+            },
+          ),
+          const SizedBox(height: 16),
+          
+          // 发送按钮
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                final text = _textController.text;
+                if (text.isNotEmpty) {
+                  _sendText(text);
+                  _textController.clear();
+                }
+              },
+              icon: const Icon(Icons.send_rounded),
+              label: const Text('发送文本'),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF3F51B5),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// 修饰键区域
-  Widget _buildModifierKeysSection() {
-    return _buildSection(
-      title: '修饰键',
-      icon: Icons.alt_route_rounded,
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          _buildModifierChip(
-            label: 'Ctrl',
-            isSelected: _isCtrlPressed,
-            onPressed: () {
-              setState(() {
-                _isCtrlPressed = !_isCtrlPressed;
-              });
-            },
-          ),
-          _buildModifierChip(
-            label: 'Shift',
-            isSelected: _isShiftPressed,
-            onPressed: () {
-              setState(() {
-                _isShiftPressed = !_isShiftPressed;
-              });
-            },
-          ),
-          _buildModifierChip(
-            label: 'Alt',
-            isSelected: _isAltPressed,
-            onPressed: () {
-              setState(() {
-                _isAltPressed = !_isAltPressed;
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 常用快捷键区域
-  Widget _buildShortcutsSection() {
-    final shortcuts = [
-      {'label': '复制', 'keys': ['ctrl', 'c'], 'icon': Icons.copy_rounded},
-      {'label': '粘贴', 'keys': ['ctrl', 'v'], 'icon': Icons.paste_rounded},
-      {'label': '剪切', 'keys': ['ctrl', 'x'], 'icon': Icons.cut_rounded},
-      {'label': '撤销', 'keys': ['ctrl', 'z'], 'icon': Icons.undo_rounded},
-      {'label': '重做', 'keys': ['ctrl', 'y'], 'icon': Icons.redo_rounded},
-      {'label': '全选', 'keys': ['ctrl', 'a'], 'icon': Icons.select_all_rounded},
-      {'label': '保存', 'keys': ['ctrl', 's'], 'icon': Icons.save_rounded},
-      {'label': '查找', 'keys': ['ctrl', 'f'], 'icon': Icons.search_rounded},
-      {'label': '新建', 'keys': ['ctrl', 'n'], 'icon': Icons.add_rounded},
-    ];
-
-    return _buildSection(
-      title: '常用快捷键',
-      icon: Icons.flash_on_rounded,
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.8,
-        ),
-        itemCount: shortcuts.length,
-        itemBuilder: (context, index) {
-          final shortcut = shortcuts[index];
-          return _buildShortcutButton(
-            icon: shortcut['icon'] as IconData,
-            label: shortcut['label'] as String,
-            onPressed: () => _sendKey(
-              (shortcut['keys'] as List<String>)[1],
-              modifiers: [(shortcut['keys'] as List<String>)[0]],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  /// 功能键区域
-  Widget _buildFunctionKeysSection() {
-    final functionKeys = [
-      {'label': 'Tab', 'key': 'VK_TAB', 'icon': Icons.keyboard_tab_rounded},
-      {'label': 'Enter', 'key': 'VK_RETURN', 'icon': Icons.keyboard_return_rounded},
-      {'label': 'Esc', 'key': 'VK_ESCAPE', 'icon': Icons.close_rounded},
-      {'label': 'Space', 'key': 'VK_SPACE', 'icon': Icons.space_bar_rounded},
-      {'label': 'Backspace', 'key': 'VK_BACK', 'icon': Icons.backspace_rounded},
-      {'label': 'Delete', 'key': 'VK_DELETE', 'icon': Icons.delete_rounded},
-      {'label': 'Home', 'key': 'VK_HOME', 'icon': Icons.home_rounded},
-      {'label': 'End', 'key': 'VK_END', 'icon': Icons.last_page_rounded},
-    ];
-
-    return _buildSection(
-      title: '功能按键',
-      icon: Icons.keyboard_alt_rounded,
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.5,
-        ),
-        itemCount: functionKeys.length,
-        itemBuilder: (context, index) {
-          final key = functionKeys[index];
-          return _buildFunctionKeyButton(
-            icon: key['icon'] as IconData,
-            label: key['label'] as String,
-            onPressed: () => _sendKey(
-              key['key'] as String,
-              modifiers: _getCurrentModifiers(),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  /// 方向键区域
-  Widget _buildDirectionKeysSection() {
-    return _buildSection(
-      title: '方向键',
-      icon: Icons.keyboard_arrow_up_rounded,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // 上方向键
-            _buildDirectionButton(
-              icon: Icons.keyboard_arrow_up_rounded,
-              onPressed: () => _sendKey('VK_UP', modifiers: _getCurrentModifiers()),
-            ),
-            const SizedBox(height: 12),
-            // 左、下、右方向键
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildDirectionButton(
-                  icon: Icons.keyboard_arrow_left_rounded,
-                  onPressed: () => _sendKey('VK_LEFT', modifiers: _getCurrentModifiers()),
-                ),
-                _buildDirectionButton(
-                  icon: Icons.keyboard_arrow_down_rounded,
-                  onPressed: () => _sendKey('VK_DOWN', modifiers: _getCurrentModifiers()),
-                ),
-                _buildDirectionButton(
-                  icon: Icons.keyboard_arrow_right_rounded,
-                  onPressed: () => _sendKey('VK_RIGHT', modifiers: _getCurrentModifiers()),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 通用区域构建器
-  Widget _buildSection({
-    required String title,
-    required IconData icon,
-    required Widget child,
-  }) {
+  /// 修饰键面板
+  Widget _buildModifierPanel(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3F51B5).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.keyboard_alt_rounded,
+                color: const Color(0xFF3F51B5),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '修饰键',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF3F51B5),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          Row(
+            children: [
+              Expanded(
+                child: _buildModifierKey('Ctrl', _isCtrlPressed, () {
+                  setState(() {
+                    _isCtrlPressed = !_isCtrlPressed;
+                  });
+                }),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildModifierKey('Shift', _isShiftPressed, () {
+                  setState(() {
+                    _isShiftPressed = !_isShiftPressed;
+                  });
+                }),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildModifierKey('Alt', _isAltPressed, () {
+                  setState(() {
+                    _isAltPressed = !_isAltPressed;
+                  });
+                }),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 修饰键按钮
+  Widget _buildModifierKey(String label, bool isPressed, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isPressed ? const Color(0xFF3F51B5) : const Color(0xFF3F51B5).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFF3F51B5).withOpacity(isPressed ? 1.0 : 0.3),
+            width: 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isPressed ? Colors.white : const Color(0xFF3F51B5),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 快捷键网格
+  Widget _buildShortcutGrid(BuildContext context) {
+    final shortcuts = [
+      {'label': '复制', 'keys': ['ctrl', 'c'], 'icon': Icons.copy_rounded},
+      {'label': '粘贴', 'keys': ['ctrl', 'v'], 'icon': Icons.paste_rounded},
+      {'label': '剪切', 'keys': ['ctrl', 'x'], 'icon': Icons.cut_rounded},
+      {'label': '撤销', 'keys': ['ctrl', 'z'], 'icon': Icons.undo_rounded},
+      {'label': '全选', 'keys': ['ctrl', 'a'], 'icon': Icons.select_all_rounded},
+      {'label': '保存', 'keys': ['ctrl', 's'], 'icon': Icons.save_rounded},
+    ];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          width: 1,
         ),
       ),
       child: Column(
@@ -467,91 +420,167 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
           Row(
             children: [
               Icon(
-                icon,
-                color: Theme.of(context).colorScheme.primary,
+                Icons.flash_on_rounded,
+                color: const Color(0xFF3F51B5),
                 size: 20,
               ),
               const SizedBox(width: 8),
               Text(
-                title,
+                '常用快捷键',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF3F51B5),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          child,
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 2.0,
+            ),
+            itemCount: shortcuts.length,
+            itemBuilder: (context, index) {
+              final shortcut = shortcuts[index];
+              return _buildShortcutButton(
+                icon: shortcut['icon'] as IconData,
+                label: shortcut['label'] as String,
+                onPressed: () => _sendKey(
+                  (shortcut['keys'] as List<String>)[1],
+                  modifiers: [(shortcut['keys'] as List<String>)[0]],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  /// 主要按钮
-  Widget _buildPrimaryButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return FilledButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      ),
-    );
-  }
+  /// 功能键面板
+  Widget _buildFunctionPanel(BuildContext context) {
+    final functionKeys = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
 
-  /// 次要按钮
-  Widget _buildSecondaryButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      ),
-    );
-  }
-
-  /// 修饰键Chip
-  Widget _buildModifierChip({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onPressed,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected 
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected 
-                  ? Colors.white
-                  : Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        border: Border.all(
+          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          width: 1,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.functions_rounded,
+                color: const Color(0xFF3F51B5),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '功能键',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF3F51B5),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 6,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 1.5,
+            ),
+            itemCount: functionKeys.length,
+            itemBuilder: (context, index) {
+              return _buildFunctionKeyButton(functionKeys[index]);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 方向键控制
+  Widget _buildDirectionControl(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.keyboard_arrow_up_rounded,
+                color: const Color(0xFF3F51B5),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '方向键 & 特殊键',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF3F51B5),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Column(
+            children: [
+              // 上方向键
+              _buildDirectionKey(Icons.keyboard_arrow_up_rounded, () => _sendKey('ArrowUp')),
+              const SizedBox(height: 8),
+              // 左右方向键
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildDirectionKey(Icons.keyboard_arrow_left_rounded, () => _sendKey('ArrowLeft')),
+                  _buildDirectionKey(Icons.keyboard_arrow_down_rounded, () => _sendKey('ArrowDown')),
+                  _buildDirectionKey(Icons.keyboard_arrow_right_rounded, () => _sendKey('ArrowRight')),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // 特殊键
+              Row(
+                children: [
+                  Expanded(child: _buildSpecialKey('Enter', () => _sendKey('Enter'))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildSpecialKey('Space', () => _sendKey(' '))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildSpecialKey('Backspace', () => _sendKey('Backspace'))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildSpecialKey('Tab', () => _sendKey('Tab'))),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -563,33 +592,24 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     required VoidCallback onPressed,
   }) {
     return Material(
-      color: Colors.transparent,
+      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-            ),
-          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
+              Icon(icon, color: const Color(0xFF3F51B5), size: 16),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w500,
+                style: const TextStyle(
+                  color: Color(0xFF3F51B5),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -601,44 +621,24 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
   }
 
   /// 功能键按钮
-  Widget _buildFunctionKeyButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildFunctionKeyButton(String key) {
     return Material(
-      color: Colors.transparent,
+      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      borderRadius: BorderRadius.circular(8),
       child: InkWell(
-        onTap: onPressed,
+        onTap: () => _sendKey(key),
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+          child: Center(
+            child: Text(
+              key,
+              style: const TextStyle(
+                color: Color(0xFF3F51B5),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: Theme.of(context).colorScheme.primary,
-                size: 16,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
           ),
         ),
       ),
@@ -646,29 +646,43 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
   }
 
   /// 方向键按钮
-  Widget _buildDirectionButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
+  Widget _buildDirectionKey(IconData icon, VoidCallback onPressed) {
     return Material(
-      color: Colors.transparent,
+      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           width: 48,
           height: 48,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            ),
+          child: Center(
+            child: Icon(icon, color: const Color(0xFF3F51B5), size: 24),
           ),
-          child: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.primary,
-            size: 24,
+        ),
+      ),
+    );
+  }
+
+  /// 特殊键按钮
+  Widget _buildSpecialKey(String label, VoidCallback onPressed) {
+    return Material(
+      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Center(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF3F51B5),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
       ),
@@ -676,50 +690,140 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
   }
 
   Widget _buildNotConnectedView() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 靛蓝主题图标
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFF3F51B5).withOpacity(0.1),
+                    const Color(0xFF303F9F).withOpacity(0.05),
+                  ],
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFF3F51B5).withOpacity(0.2),
+                  width: 2,
+                ),
+              ),
+              child: const Icon(
+                Icons.keyboard_rounded,
+                size: 64,
+                color: Color(0xFF3F51B5),
+              ),
             ),
-            child: Icon(
-              Icons.keyboard_hide_rounded,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
+            const SizedBox(height: 32),
+            
+            Text(
+              '键盘输入器',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF3F51B5),
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            '设备未连接',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
+            const SizedBox(height: 16),
+            Text(
+              '需要连接PC设备才能使用',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '请先连接到PC设备后再使用键盘功能',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            const SizedBox(height: 8),
+            Text(
+              '连接后即可享受完整的键盘控制体验',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 48),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => context.push('/connect'),
-              icon: const Icon(Icons.wifi_rounded),
-              label: const Text('连接设备'),
+            
+            const SizedBox(height: 48),
+            
+            // 功能介绍卡片
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3F51B5).withOpacity(0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFF3F51B5).withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    '支持的输入功能',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF3F51B5),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildKeyboardFeature(Icons.edit_rounded, '文本\n输入'),
+                      _buildKeyboardFeature(Icons.keyboard_alt_rounded, '修饰键\n组合'),
+                      _buildKeyboardFeature(Icons.flash_on_rounded, '快捷键\n操作'),
+                      _buildKeyboardFeature(Icons.functions_rounded, '功能键\n控制'),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            
+            const SizedBox(height: 32),
+            
+            // 连接按钮
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => context.go('/connect'),
+                icon: const Icon(Icons.wifi_rounded),
+                label: const Text('连接设备'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF3F51B5),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  /// 键盘功能项展示
+  Widget _buildKeyboardFeature(IconData icon, String label) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: const Color(0xFF3F51B5),
+          size: 24,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF3F51B5),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 } 
