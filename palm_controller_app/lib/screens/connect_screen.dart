@@ -102,6 +102,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
 
   Future<void> _requestPermissions() async {
     final status = await Permission.locationWhenInUse.request();
+    if (!mounted) return;
+    
     if (status == PermissionStatus.granted) {
       setState(() {
         _showPermissionCard = false;
@@ -137,24 +139,30 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
 
     try {
       final devices = await _discoveryService.scanOnce(timeout: const Duration(seconds: 8));
+      if (!mounted) return;
+      if (!mounted) return;
       setState(() {
         _discoveredDevices = devices;
         _isScanning = false;
       });
 
       if (devices.isEmpty) {
+        if (!mounted) return;
         setState(() {
           _scanError = '未发现任何设备，请确保PC端程序正在运行';
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('发现 ${devices.length} 个设备'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('发现 ${devices.length} 个设备'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isScanning = false;
         _scanError = '扫描失败: $e';
@@ -978,8 +986,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                                 Text(
-                   device.serviceName,
+                Text(
+                   device.hostName,
                    style: const TextStyle(
                      fontWeight: FontWeight.bold,
                      color: Colors.green,

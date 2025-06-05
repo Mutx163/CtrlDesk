@@ -47,7 +47,9 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     }
   }
 
-  void _sendKey(String keyCode, {List<String> modifiers = const []}) {
+  void _sendKey(String keyCode, {List<String>? modifiers}) {
+    final bool useCurrentModifiers = modifiers == null;
+    modifiers ??= _getCurrentModifiers();
     final message = ControlMessage.keyboardControl(
       messageId: DateTime.now().millisecondsSinceEpoch.toString(),
       action: 'key_press',
@@ -58,6 +60,12 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     
     // 提供触觉反馈
     HapticFeedback.lightImpact();
+    
+    // 只有在使用当前修饰键状态时才自动清除（模拟真实键盘行为）
+    // 快捷键（显式传递修饰键）不会清除切换状态
+    if (useCurrentModifiers && modifiers.isNotEmpty) {
+      _clearModifierKeys();
+    }
   }
 
   List<String> _getCurrentModifiers() {
@@ -66,6 +74,14 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     if (_isShiftPressed) modifiers.add('shift');
     if (_isAltPressed) modifiers.add('alt');
     return modifiers;
+  }
+
+  void _clearModifierKeys() {
+    setState(() {
+      _isCtrlPressed = false;
+      _isShiftPressed = false;
+      _isAltPressed = false;
+    });
   }
 
   @override

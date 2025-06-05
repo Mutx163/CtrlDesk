@@ -732,46 +732,53 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   }
 
   /// 截图功能
-  void _takeScreenshot(String type) async {
-    setState(() {
-      _isScreenshotLoading = true;
-    });
-
+  Future<void> _takeScreenshot(String type) async {
+    setState(() => _isScreenshotLoading = true);
+    
     try {
       final message = ControlMessage.systemControl(
         messageId: DateTime.now().millisecondsSinceEpoch.toString(),
         action: 'screenshot_$type',
       );
-      
       final socketService = ref.read(socketServiceProvider);
-      socketService.sendMessage(message);
+      await socketService.sendMessage(message);
       
       HapticFeedback.lightImpact();
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('正在进行${type == 'fullscreen' ? '全屏' : type == 'window' ? '窗口' : type == 'region' ? '区域' : '延迟'}截图...'),
-          backgroundColor: const Color(0xFFFF5722),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('正在进行${type == 'fullscreen' ? '全屏' : type == 'window' ? '窗口' : type == 'region' ? '区域' : '延迟'}截图...'),
+            backgroundColor: const Color(0xFFFF5722),
+          ),
+        );
+      }
+    } catch (e) {
+      // 处理发送失败的情况
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('截图指令发送失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        _isScreenshotLoading = false;
-      });
+      // 确保在组件未销毁时才更新状态
+      if (mounted) {
+        setState(() {
+          _isScreenshotLoading = false;
+        });
+      }
     }
   }
 
   /// 系统控制
-  void _sendSystemControl(String action) {
+  Future<void> _sendSystemControl(String action) async {
     final message = ControlMessage.systemControl(
       messageId: DateTime.now().millisecondsSinceEpoch.toString(),
       action: action,
     );
-    
-    final socketService = ref.read(socketServiceProvider);
-    socketService.sendMessage(message);
-    
-    HapticFeedback.lightImpact();
     
     final actionMap = {
       'lock': '锁定屏幕',
@@ -780,12 +787,30 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
       'shutdown': '关机',
     };
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('已发送${actionMap[action]}指令'),
-        backgroundColor: const Color(0xFF795548),
-      ),
-    );
+    try {
+      final socketService = ref.read(socketServiceProvider);
+      await socketService.sendMessage(message);
+      
+      HapticFeedback.lightImpact();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('已发送${actionMap[action]}指令'),
+            backgroundColor: const Color(0xFF795548),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${actionMap[action]}指令发送失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   /// 断开连接

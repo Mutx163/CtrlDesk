@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../providers/connection_provider.dart';
-import '../services/socket_service.dart';
-import '../models/control_message.dart';
-import 'dart:async'; // 添加Timer支持
+ import '../providers/connection_provider.dart';
+ import '../services/socket_service.dart';
+ import '../models/control_message.dart';
+ import 'dart:async'; // 添加Timer支持
+
 
 class ControlScreen extends ConsumerStatefulWidget {
   const ControlScreen({super.key});

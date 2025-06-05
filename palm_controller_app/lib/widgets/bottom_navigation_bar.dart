@@ -166,19 +166,24 @@ class BottomNavigationBarWidget extends ConsumerWidget {
            // 尝试使用PageController进行滑动切换
            final pageController = ref.read(pageControllerProvider);
            if (pageController != null) {
-             // 使用PageView滑动切换
+             // 使用路由到页面索引的映射，而不是导航数组索引
+             final pageIndex = _routeToPageIndex(item.route);
              pageController.animateToPage(
-               index,
+               pageIndex,
                duration: const Duration(milliseconds: 300),
                curve: Curves.easeInOut,
              );
+             // 更新导航索引以保持UI高亮正确
+             ref.read(navigationIndexProvider.notifier).state = index;
            } else {
              // 回退到路由切换（兼容性）
              final routeToIndexMap = {
                '/control': 0,
                '/touchpad': 1,  
                '/keyboard': 2,
-               '/tools': 3,
+               '/screenshot': 3,
+               '/monitor': 4,
+               '/tools': 5,
                '/connect': 0, // 未连接状态的连接页面
                '/settings': 1, // 未连接状态的设置页面
              };
@@ -252,6 +257,26 @@ class BottomNavigationBarWidget extends ConsumerWidget {
   /// 构建脉冲指示器 (连接中状态)
   Widget _buildPulsingIndicator(Color color) {
     return _PulsingDot(color: color);
+  }
+
+  /// 将路由转换为实际的页面索引
+  int _routeToPageIndex(String route) {
+    // 这个映射应该与MainScaffold中的_getPagesForConnectionStatus保持一致
+    const routeToPageIndexMap = {
+      // 连接状态下的页面映射
+      '/control': 0,       // ControlScreen
+      '/touchpad': 1,      // TouchpadScreen  
+      '/keyboard': 2,      // KeyboardScreen
+      '/screenshot': 3,    // ScreenshotScreen
+      '/monitor': 4,       // MonitorScreen
+      '/tools': 5,         // ToolsScreen
+      
+      // 未连接状态下的页面映射
+      '/connect': 0,       // ConnectScreen
+      '/settings': 1,      // SettingsScreen
+    };
+    
+    return routeToPageIndexMap[route] ?? 0;
   }
 }
 

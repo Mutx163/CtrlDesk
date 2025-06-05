@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../screens/control_screen.dart';
@@ -32,7 +33,11 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   @override
   void initState() {
     super.initState();
-    _currentPageIndex = widget.pageIndex;
+    // 验证 initialPage 不超过当前页面列表长度，防止深链接时的 RangeError
+    _currentPageIndex = math.min(
+      widget.pageIndex,
+      _getPagesForConnectionStatus(ref.read(connectionStatusProvider)).length - 1,
+    );
     _pageController = PageController(initialPage: _currentPageIndex);
   }
 
@@ -93,12 +98,14 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   /// 根据连接状态获取页面列表
   List<Widget> _getPagesForConnectionStatus(ConnectionStatus connectionStatus) {
     if (connectionStatus == ConnectionStatus.connected) {
-      // 已连接状态：4个页面（媒体、触摸、键盘、工具）
+      // 已连接状态：6个页面（媒体、触摸、键盘、截图、监控、工具）
       return [
         const ControlScreen(),      // 0 - 媒体控制
         const TouchpadScreen(),     // 1 - 触摸板
         const KeyboardScreen(),     // 2 - 键盘
-        const ToolsScreen(),        // 3 - 工具
+        const ScreenshotScreen(),   // 3 - 截图
+        const MonitorScreen(),      // 4 - 监控
+        const ToolsScreen(),        // 5 - 工具
       ];
     } else {
       // 未连接状态：2个页面（连接、设置）
@@ -127,6 +134,12 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
           newRoute = '/keyboard';
           break;
         case 3:
+          newRoute = '/screenshot';
+          break;
+        case 4:
+          newRoute = '/monitor';
+          break;
+        case 5:
           newRoute = '/tools';
           break;
         default:

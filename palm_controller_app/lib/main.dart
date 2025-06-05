@@ -1,17 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'screens/screenshot_screen.dart';
-import 'screens/monitor_screen.dart';
 import 'screens/settings_screen.dart';
-import 'screens/tools_screen.dart';
-import 'providers/connection_provider.dart';
 import 'widgets/main_scaffold.dart';
-import 'screens/connect_screen.dart';
-import 'screens/control_screen.dart';
-import 'screens/keyboard_screen.dart';
-import 'screens/system_screen.dart';
-import 'screens/touchpad_screen.dart';
 import 'services/log_service.dart';
 import 'widgets/startup_widget.dart';
 
@@ -325,14 +316,9 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const MainScaffold(pageIndex: 5),
     ),
     GoRoute(
-      path: '/system',
-      name: 'system',
-      builder: (context, state) => const MainScaffold(pageIndex: 6),
-    ),
-    GoRoute(
       path: '/connect',
       name: 'connect',
-      builder: (context, state) => const MainScaffold(pageIndex: 7),
+      builder: (context, state) => const MainScaffold(pageIndex: 0),
     ),
     // 设置页面独立，不包含底部导航栏
     GoRoute(
