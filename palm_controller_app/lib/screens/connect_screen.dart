@@ -327,13 +327,13 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.green.withValues(alpha: 0.1),
-            Colors.orange.withValues(alpha: 0.05),
+            Colors.green.withOpacity(0.1),
+            Colors.orange.withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.green.withValues(alpha: 0.2),
+          color: Colors.green.withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -343,7 +343,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
+              color: Colors.green.withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -370,7 +370,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                 Text(
                   '自动发现和连接您的Windows PC',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -390,12 +390,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.green.withValues(alpha: 0.2),
+          color: Colors.green.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.green.withValues(alpha: 0.1),
+            color: Colors.green.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -447,9 +447,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
+                color: Colors.red.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                border: Border.all(color: Colors.red.withOpacity(0.2)),
               ),
               child: Row(
                 children: [
@@ -468,9 +468,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
+                color: Colors.grey.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
               ),
               child: Row(
                 children: [
@@ -501,12 +501,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.orange.withValues(alpha: 0.2),
+          color: Colors.orange.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withValues(alpha: 0.1),
+            color: Colors.orange.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -639,9 +639,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                    border: Border.all(color: Colors.red.withOpacity(0.2)),
                   ),
                   child: Row(
                     children: [
@@ -675,12 +675,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.blue.withValues(alpha: 0.2),
+          color: Colors.blue.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.1),
+            color: Colors.blue.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -713,7 +713,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
+                color: Colors.grey.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Row(
@@ -734,17 +734,17 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               children: connectionConfigs.map((config) => Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
                   ),
                 ),
                 child: ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
+                      color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.computer, color: Colors.blue, size: 20),
@@ -807,16 +807,16 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.05),
+        color: Colors.green.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.green.withOpacity(0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
+              color: Colors.green.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.computer, color: Colors.green, size: 20),
@@ -896,3 +896,4 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     }
   }
 } 
+

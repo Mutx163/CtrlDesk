@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/startup_service.dart';
 import '../services/log_service.dart';
@@ -115,7 +115,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
+                    color: Colors.black.withOpacity(0.2),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -141,7 +141,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
             Text(
               'PalmController',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.8),
+                                    color: Colors.white.withOpacity(0.8),
               ),
             ),
             
@@ -163,7 +163,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
             Text(
               _statusMessage,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color: Colors.white.withOpacity(0.9),
               ),
               textAlign: TextAlign.center,
             ),

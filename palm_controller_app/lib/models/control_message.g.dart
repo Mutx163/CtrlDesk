@@ -1,4 +1,4 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+﻿// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'control_message.dart';
 
@@ -21,3 +21,4 @@ Map<String, dynamic> _$ControlMessageToJson(ControlMessage instance) =>
       'timestamp': instance.timestamp.toIso8601String(),
       'payload': instance.payload,
     };
+

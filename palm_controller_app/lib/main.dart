@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'screens/settings_screen.dart';
@@ -139,7 +139,7 @@ class PalmControllerApp extends ConsumerWidget {
       // Chip 现代化设计
       chipTheme: ChipThemeData(
         backgroundColor: surfaceColor,
-        selectedColor: primaryColor.withValues(alpha: 0.1),
+        selectedColor: primaryColor.withOpacity(0.1),
         side: BorderSide(color: Colors.grey.shade300),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -260,7 +260,7 @@ class PalmControllerApp extends ConsumerWidget {
       // Chip 深色设计
       chipTheme: ChipThemeData(
         backgroundColor: cardColor,
-        selectedColor: primaryColor.withValues(alpha: 0.2),
+        selectedColor: primaryColor.withOpacity(0.2),
         side: BorderSide(color: Colors.grey.shade600),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -360,3 +360,4 @@ final GoRouter _router = GoRouter(
     ),
   ),
 );
+

@@ -1,6 +1,6 @@
-import 'connection_config.dart';
+﻿import 'connection_config.dart';
 
-/// 发现的设备信息模�?
+/// 发现的设备信息模�?
 class DiscoveredDevice {
   final String serviceName;
   final String serviceType;
@@ -34,7 +34,7 @@ class DiscoveredDevice {
     );
   }
 
-  /// 转换为连接配�?
+  /// 转换为连接配�?
   ConnectionConfig toConnectionConfig() {
     return ConnectionConfig(
       id: '${ipAddress}_${port}_${DateTime.now().millisecondsSinceEpoch}',

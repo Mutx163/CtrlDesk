@@ -1,4 +1,4 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
+﻿// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'connection_config.dart';
 
@@ -27,3 +27,4 @@ Map<String, dynamic> _$ConnectionConfigToJson(ConnectionConfig instance) =>
       'lastConnected': instance.lastConnected.toIso8601String(),
       'autoConnect': instance.autoConnect,
     };
+

@@ -103,12 +103,12 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -138,7 +138,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
       height: 48, // 大幅减少高度，从原来的约80px减少�?8px
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -189,10 +189,10 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     return Container(
       margin: const EdgeInsets.all(8), // 减少边距，最大化触摸区域
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.02),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           width: 1,
         ),
       ),
@@ -215,7 +215,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                   margin: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8),
@@ -228,14 +228,14 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
+                    color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
+                        color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -247,7 +247,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                       Icon(
                         Icons.mouse_rounded,
                         size: 20,
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
                       ),
                       const SizedBox(width: 8),
                       Column(
@@ -263,7 +263,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                           Text(
                             '单击·双击·长按',
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
                         ],
@@ -281,7 +281,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                   width: 3,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -293,7 +293,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                   width: 3,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -305,7 +305,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                   width: 3,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -317,7 +317,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                   width: 3,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -335,7 +335,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
       height: 64, // 固定高度，确保符�?4dp最小触摸目�?
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+        color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -370,7 +370,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                 Text(
                   '滚轮',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontSize: 10,
                   ),
                 ),
@@ -419,7 +419,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
             ),
           ),
           child: Column(
@@ -464,7 +464,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
             ),
           ),
           child: Icon(
@@ -560,4 +560,6 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     );
   }
 } 
+
+
 
