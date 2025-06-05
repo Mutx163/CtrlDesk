@@ -13,12 +13,12 @@ class TouchpadWidget extends ConsumerStatefulWidget {
 }
 
 class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
-  // 防抖定时器
+  // 防抖定时�?
   Timer? _mouseMoveDebounce;
   
   // 事件节流
   DateTime _lastMouseSendTime = DateTime.now();
-  static const int _mouseThrottleMs = 16; // 约60fps
+  static const int _mouseThrottleMs = 16; // �?0fps
   
   bool _isDragging = false;
   double _lastPanDeltaX = 0;
@@ -35,19 +35,19 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     super.dispose();
   }
 
-  // Socket 通信方法 - 带节流的发送
+  // Socket 通信方法 - 带节流的发�?
   void _sendMouseMove(double deltaX, double deltaY) {
     final now = DateTime.now();
     final timeDiff = now.difference(_lastMouseSendTime).inMilliseconds;
     
-    // 节流：限制发送频率
+    // 节流：限制发送频�?
     if (timeDiff < _mouseThrottleMs) {
       return;
     }
     
     _lastMouseSendTime = now;
     
-    // 发送鼠标移动指令
+    // 发送鼠标移动指�?
     final socketService = ref.read(socketServiceProvider);
     socketService.sendMouseControl(
       action: 'move',
@@ -116,10 +116,10 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
       ),
       child: Column(
         children: [
-          // 精简的顶部控制栏 - 人因工程学：最小化非主要功能占用空间
+          // 精简的顶部控制栏 - 人因工程学：最小化非主要功能占用空�?
           _buildCompactHeader(context, settings),
           
-          // 主触摸板区域 - 最大化设计 (占用约85%的空间)
+          // 主触摸板区域 - 最大化设计 (占用�?5%的空�?
           Expanded(
             flex: 85, 
             child: _buildMaximizedTouchpadArea(context, settings),
@@ -135,7 +135,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
   /// 精简的顶部控制栏 - 人因工程学：减少垂直空间占用
   Widget _buildCompactHeader(BuildContext context, AppSettings settings) {
     return Container(
-      height: 48, // 大幅减少高度，从原来的约80px减少到48px
+      height: 48, // 大幅减少高度，从原来的约80px减少�?8px
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
@@ -146,7 +146,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
       ),
       child: Row(
         children: [
-          // 触摸板图标 - 小型化
+          // 触摸板图�?- 小型�?
           Icon(
             Icons.touch_app_rounded,
             color: Theme.of(context).colorScheme.primary,
@@ -157,7 +157,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
           // 标题和灵敏度信息 - 单行显示
           Expanded(
             child: Text(
-              '触摸板 · 灵敏度 ${(settings.mouseSensitivity * 100).round()}%',
+              '触摸�?· 灵敏�?${(settings.mouseSensitivity * 100).round()}%',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.primary,
@@ -184,7 +184,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     );
   }
 
-  /// 最大化触摸板区域 - 人因工程学核心：触摸区域优先
+  /// 最大化触摸板区�?- 人因工程学核心：触摸区域优先
   Widget _buildMaximizedTouchpadArea(BuildContext context, AppSettings settings) {
     return Container(
       margin: const EdgeInsets.all(8), // 减少边距，最大化触摸区域
@@ -209,7 +209,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
           height: double.infinity,
           child: Stack(
             children: [
-              // 边缘引导线 - 增强边界感知
+              // 边缘引导�?- 增强边界感知
               Positioned.fill(
                 child: Container(
                   margin: const EdgeInsets.all(12),
@@ -223,7 +223,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                 ),
               ),
               
-              // 中心指示器 - 优化尺寸和位置
+              // 中心指示�?- 优化尺寸和位�?
               Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -332,7 +332,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
   /// 紧凑型底部按钮栏 - 人因工程学：44dp最小触摸目标，合理布局
   Widget _buildCompactButtonBar(BuildContext context, AppSettings settings) {
     return Container(
-      height: 64, // 固定高度，确保符合44dp最小触摸目标
+      height: 64, // 固定高度，确保符�?4dp最小触摸目�?
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
@@ -343,7 +343,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
       ),
       child: Row(
         children: [
-          // 左键按钮 - 44dp最小触摸目标
+          // 左键按钮 - 44dp最小触摸目�?
           Expanded(
             child: _buildTouchTargetButton(
               context,
@@ -356,7 +356,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
           
           // 滚轮区域 - 紧凑设计
           SizedBox(
-            width: 72, // 减少宽度，给主按钮更多空间
+            width: 72, // 减少宽度，给主按钮更多空�?
             child: Column(
               children: [
                 Expanded(
@@ -387,7 +387,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
           ),
           
           const SizedBox(width: 8),
-          // 右键按钮 - 44dp最小触摸目标
+          // 右键按钮 - 44dp最小触摸目�?
           Expanded(
             child: _buildTouchTargetButton(
               context,
@@ -401,7 +401,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     );
   }
 
-  /// 符合44dp最小触摸目标的按钮 - 人因工程学标准
+  /// 符合44dp最小触摸目标的按钮 - 人因工程学标�?
   Widget _buildTouchTargetButton(
     BuildContext context, {
     required IconData icon,
@@ -446,7 +446,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     );
   }
 
-  /// 紧凑型滚轮按钮
+  /// 紧凑型滚轮按�?
   Widget _buildScrollButton(
     BuildContext context, {
     required IconData icon,
@@ -519,14 +519,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     _sendMouseClick('right', hapticFeedback);
   }
 
-  void _handleSettingsMenu(String value, AppSettings settings) {
-    if (value == 'sensitivity') {
-      _showSensitivityDialog(settings);
-    } else if (value == 'haptic') {
-      final settingsNotifier = ref.read(settingsProvider.notifier);
-      settingsNotifier.updateHapticFeedback(!settings.hapticFeedback);
-    }
-  }
+
 
   void _showSensitivityDialog(AppSettings settings) {
     showDialog(
@@ -538,7 +531,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('当前灵敏度: ${(settings.mouseSensitivity * 100).round()}%'),
+                Text('当前灵敏度 ${(settings.mouseSensitivity * 100).round()}%'),
                 const SizedBox(height: 16),
                 Slider(
                   value: settings.mouseSensitivity,

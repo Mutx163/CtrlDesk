@@ -7,7 +7,7 @@ import '../screens/keyboard_screen.dart';
 import '../screens/screenshot_screen.dart';
 import '../screens/monitor_screen.dart';
 import '../screens/tools_screen.dart';
-import '../screens/system_screen.dart';
+
 import '../screens/connect_screen.dart';
 import '../screens/settings_screen.dart';
 import '../providers/connection_provider.dart';
@@ -116,74 +116,12 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     }
   }
 
-  /// 更新路由以保持URL同步
+  /// 更新路由以保持URL同步（暂时禁用以避免重复构建）
   void _updateRouteForIndex(int index, ConnectionStatus connectionStatus) {
-    // 这里不直接使用context.go()避免重新构建整个页面
-    // 仅在需要时更新浏览器URL
-    String newRoute;
-    
-    if (connectionStatus == ConnectionStatus.connected) {
-      switch (index) {
-        case 0:
-          newRoute = '/control';
-          break;
-        case 1:
-          newRoute = '/touchpad';
-          break;
-        case 2:
-          newRoute = '/keyboard';
-          break;
-        case 3:
-          newRoute = '/screenshot';
-          break;
-        case 4:
-          newRoute = '/monitor';
-          break;
-        case 5:
-          newRoute = '/tools';
-          break;
-        default:
-          newRoute = '/control';
-      }
-    } else {
-      switch (index) {
-        case 0:
-          newRoute = '/connect';
-          break;
-        case 1:
-          newRoute = '/settings';
-          break;
-        default:
-          newRoute = '/connect';
-      }
-    }
-    
-    // 可以在这里添加路由历史记录更新逻辑
-    // 但为了避免重复构建，暂时注释掉
-    // context.go(newRoute);
+    // TODO: 路由历史记录更新功能
+    // 暂时注释掉以避免重复构建页面
+    // 可以在未来版本中根据需要启用
   }
 
-  /// 兼容性方法：根据索引获取页面（保留原有逻辑）
-  Widget _getPageForIndex(int index) {
-    switch (index) {
-      case 0:
-        return const ControlScreen();
-      case 1:
-        return const TouchpadScreen();
-      case 2:
-        return const KeyboardScreen();
-      case 3:
-        return const ScreenshotScreen();
-      case 4:
-        return const MonitorScreen();
-      case 5:
-        return const ToolsScreen();
-      case 6:
-        return const SystemScreen();
-      case 7:
-        return const ConnectScreen();
-      default:
-        return const ControlScreen();
-    }
-  }
+
 } 

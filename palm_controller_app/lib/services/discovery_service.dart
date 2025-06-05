@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/connection_config.dart';
 import 'log_service.dart';
@@ -365,11 +364,7 @@ class DiscoveryService {
       }
     }
   }
-  
-  // 向特定网段发送UDP广播
-  Future<void> _sendToSpecificNetwork(String prefix, List<int> data, Function(bool) onResult) async {
-    await _sendToSpecificNetworkWithSocket(_socket!, prefix, data, onResult);
-  }
+
 
   // 使用指定socket向特定网段发送UDP广播
   Future<void> _sendToSpecificNetworkWithSocket(RawDatagramSocket socket, String prefix, List<int> data, Function(bool) onResult) async {

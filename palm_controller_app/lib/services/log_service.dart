@@ -132,7 +132,6 @@ class LogService {
   Logger? _logger;
   late String _sessionId;
   String? _userId;
-  bool _isInitialized = false;
   
   LogService._internal() {
     _sessionId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -161,7 +160,7 @@ class LogService {
           lineLength: 120,
           colors: false, // 文件日志不需要颜色
           printEmojis: false,
-          printTime: true,
+          dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
         ),
         output: MultiOutput([
           ConsoleOutput(), // 控制台输出（调试时可见）
@@ -176,7 +175,6 @@ class LogService {
         output: ConsoleOutput(),
       );
     }
-    _isInitialized = true;
   }
 
   /// 设置用户ID
@@ -352,9 +350,6 @@ class LogService {
           logger.f(entry.toString());
           break;
       }
-    } else {
-      // 如果logger还未初始化，打印到控制台
-      print('${level.name.toUpperCase()}: ${entry.toString()}');
     }
   }
 

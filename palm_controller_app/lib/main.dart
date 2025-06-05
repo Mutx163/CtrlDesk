@@ -139,7 +139,7 @@ class PalmControllerApp extends ConsumerWidget {
       // Chip 现代化设计
       chipTheme: ChipThemeData(
         backgroundColor: surfaceColor,
-        selectedColor: primaryColor.withOpacity(0.1),
+        selectedColor: primaryColor.withValues(alpha: 0.1),
         side: BorderSide(color: Colors.grey.shade300),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -260,7 +260,7 @@ class PalmControllerApp extends ConsumerWidget {
       // Chip 深色设计
       chipTheme: ChipThemeData(
         backgroundColor: cardColor,
-        selectedColor: primaryColor.withOpacity(0.2),
+        selectedColor: primaryColor.withValues(alpha: 0.2),
         side: BorderSide(color: Colors.grey.shade600),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),

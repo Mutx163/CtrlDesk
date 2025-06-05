@@ -3,7 +3,6 @@ import '../models/connection_config.dart';
 import '../services/discovery_service.dart';
 import '../services/socket_service.dart';
 import '../services/log_service.dart';
-import 'dart:io';
 
 enum AutoConnectStatus {
   disabled,
