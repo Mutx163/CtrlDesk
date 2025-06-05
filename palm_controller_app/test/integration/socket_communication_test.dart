@@ -18,15 +18,26 @@ void main() {
     });
 
     test('测试本地连接建立', () async {
-      // 创建连接配置 - 连接到本地服务器
+      // 获取测试IP地址（环境变量或默认localhost）
+      final testIp = const String.fromEnvironment('TEST_SERVER_IP', defaultValue: '127.0.0.1');
+      final testPort = const int.fromEnvironment('TEST_SERVER_PORT', defaultValue: 8080);
+      
+      // 创建连接配置 - 连接到测试服务器
       final config = ConnectionConfig(
         id: 'test-connection',
-        name: '本地测试服务器',
-        ipAddress: '192.168.123.239', // 服务端显示的IP地址
-        port: 8080, // 默认端口
+        name: '测试服务器',
+        ipAddress: testIp, // 使用环境变量或localhost
+        port: testPort, // 使用环境变量或默认端口
         lastConnected: DateTime.now(),
         autoConnect: false,
       );
+      
+      // 检查是否应该跳过集成测试
+      final skipIntegrationTests = const bool.fromEnvironment('SKIP_INTEGRATION_TESTS', defaultValue: false);
+      if (skipIntegrationTests) {
+        print('⏭️ 跳过集成测试（SKIP_INTEGRATION_TESTS=true）');
+        return;
+      }
 
       print('正在尝试连接到 ${config.ipAddress}:${config.port}...');
 
