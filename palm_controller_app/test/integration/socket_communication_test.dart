@@ -57,7 +57,7 @@ void main() {
 
       try {
         // 尝试连接
-        final connectResult = await socketService.connect(config);
+        await socketService.connect(config);
         // print('连接方法返回结果: $connectResult'); // 移除生产环境print
 
         // 等待状态更新
