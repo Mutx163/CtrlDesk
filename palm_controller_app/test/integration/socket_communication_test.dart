@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:palm_controller_app/services/socket_service.dart';
 import 'package:palm_controller_app/models/connection_config.dart';
 import 'package:palm_controller_app/models/control_message.dart';
@@ -35,18 +35,18 @@ void main() {
       // 检查是否应该跳过集成测试
       final skipIntegrationTests = const bool.fromEnvironment('SKIP_INTEGRATION_TESTS', defaultValue: false);
       if (skipIntegrationTests) {
-        print('⏭️ 跳过集成测试（SKIP_INTEGRATION_TESTS=true）');
+        // print('⏭️ 跳过集成测试（SKIP_INTEGRATION_TESTS=true）'); // 移除生产环境print
         return;
       }
 
-      print('正在尝试连接到 ${config.ipAddress}:${config.port}...');
+      // print('正在尝试连接到 ${config.ipAddress}:${config.port}...'); // 移除生产环境print
 
       // 监听连接状态
       final statusCompleter = Completer<ConnectionStatus>();
       late StreamSubscription statusSubscription;
       
       statusSubscription = socketService.statusStream.listen((status) {
-        print('连接状态变化: $status');
+        // print('连接状态变化: $status'); // 移除生产环境print
         if (status == ConnectionStatus.connected || 
             status == ConnectionStatus.error) {
           if (!statusCompleter.isCompleted) {
@@ -58,7 +58,7 @@ void main() {
       try {
         // 尝试连接
         final connectResult = await socketService.connect(config);
-        print('连接方法返回结果: $connectResult');
+        // print('连接方法返回结果: $connectResult'); // 移除生产环境print
 
         // 等待状态更新
         final finalStatus = await statusCompleter.future.timeout(
@@ -69,16 +69,16 @@ void main() {
         await statusSubscription.cancel();
 
         if (finalStatus == ConnectionStatus.connected) {
-          print('✅ 连接成功建立');
+          // print('✅ 连接成功建立'); // 移除生产环境print
           expect(socketService.currentStatus, equals(ConnectionStatus.connected));
         } else {
-          print('❌ 连接失败');
-          print('错误信息: ${socketService.lastError}');
+          // print('❌ 连接失败'); // 移除生产环境print
+          // print('错误信息: ${socketService.lastError}'); // 移除生产环境print
           fail('连接建立失败: ${socketService.lastError}');
         }
       } catch (e) {
         await statusSubscription.cancel();
-        print('❌ 连接过程中发生异常: $e');
+        // print('❌ 连接过程中发生异常: $e'); // 移除生产环境print
         fail('连接异常: $e');
       }
     });
@@ -89,14 +89,14 @@ void main() {
         fail('测试前置条件失败：Socket未连接');
       }
 
-      print('开始测试消息发送...');
+      // print('开始测试消息发送...'); // 移除生产环境print
 
       // 监听收到的消息
       final messageCompleter = Completer<ControlMessage>();
       late StreamSubscription messageSubscription;
       
       messageSubscription = socketService.messageStream.listen((message) {
-        print('收到消息: ${message.type} - ${message.messageId}');
+        // print('收到消息: ${message.type} - ${message.messageId}'); // 移除生产环境print
         if (message.type == 'response' && !messageCompleter.isCompleted) {
           messageCompleter.complete(message);
         }
@@ -108,7 +108,7 @@ void main() {
           ControlMessage.heartbeat(messageId: 'test-heartbeat-001')
         );
         
-        print('心跳消息发送结果: $heartbeatResult');
+        // print('心跳消息发送结果: $heartbeatResult'); // 移除生产环境print
         expect(heartbeatResult, isTrue);
 
         // 等待服务端响应
@@ -119,12 +119,12 @@ void main() {
 
         await messageSubscription.cancel();
 
-        print('✅ 收到服务端响应: ${response.payload}');
+        // print('✅ 收到服务端响应: ${response.payload}'); // 移除生产环境print
         expect(response.type, equals('response'));
         
       } catch (e) {
         await messageSubscription.cancel();
-        print('❌ 消息测试失败: $e');
+        // print('❌ 消息测试失败: $e'); // 移除生产环境print
         fail('消息发送/接收测试失败: $e');
       }
     });
@@ -134,7 +134,7 @@ void main() {
         fail('测试前置条件失败：Socket未连接');
       }
 
-      print('开始测试鼠标控制指令...');
+      // print('开始测试鼠标控制指令...'); // 移除生产环境print
 
       try {
         // 发送鼠标移动指令
@@ -145,7 +145,7 @@ void main() {
         );
         
         expect(mouseMoveResult, isTrue);
-        print('✅ 鼠标移动指令发送成功');
+        // print('✅ 鼠标移动指令发送成功'); // 移除生产环境print
 
         // 发送鼠标点击指令
         final mouseClickResult = await socketService.sendMouseControl(
@@ -155,10 +155,10 @@ void main() {
         );
         
         expect(mouseClickResult, isTrue);
-        print('✅ 鼠标点击指令发送成功');
+        // print('✅ 鼠标点击指令发送成功'); // 移除生产环境print
 
       } catch (e) {
-        print('❌ 鼠标控制测试失败: $e');
+        // print('❌ 鼠标控制测试失败: $e'); // 移除生产环境print
         fail('鼠标控制测试失败: $e');
       }
     });
@@ -168,7 +168,7 @@ void main() {
         fail('测试前置条件失败：Socket未连接');
       }
 
-      print('开始测试键盘控制指令...');
+      // print('开始测试键盘控制指令...'); // 移除生产环境print
 
       try {
         // 发送文本输入指令
@@ -178,7 +178,7 @@ void main() {
         );
         
         expect(textInputResult, isTrue);
-        print('✅ 文本输入指令发送成功');
+        // print('✅ 文本输入指令发送成功'); // 移除生产环境print
 
         // 发送按键指令
         final keyPressResult = await socketService.sendKeyboardControl(
@@ -187,10 +187,10 @@ void main() {
         );
         
         expect(keyPressResult, isTrue);
-        print('✅ 按键指令发送成功');
+        // print('✅ 按键指令发送成功'); // 移除生产环境print
 
       } catch (e) {
-        print('❌ 键盘控制测试失败: $e');
+        // print('❌ 键盘控制测试失败: $e'); // 移除生产环境print
         fail('键盘控制测试失败: $e');
       }
     });
@@ -200,21 +200,21 @@ void main() {
         fail('测试前置条件失败：Socket未连接');
       }
 
-      print('开始测试媒体控制指令...');
+      // print('开始测试媒体控制指令...'); // 移除生产环境print
 
       try {
         // 发送播放/暂停指令
         final playPauseResult = await socketService.sendMediaControl('play_pause');
         expect(playPauseResult, isTrue);
-        print('✅ 播放/暂停指令发送成功');
+        // print('✅ 播放/暂停指令发送成功'); // 移除生产环境print
 
         // 发送音量控制指令
         final volumeUpResult = await socketService.sendMediaControl('volume_up');
         expect(volumeUpResult, isTrue);
-        print('✅ 音量增加指令发送成功');
+        // print('✅ 音量增加指令发送成功'); // 移除生产环境print
 
       } catch (e) {
-        print('❌ 媒体控制测试失败: $e');
+        // print('❌ 媒体控制测试失败: $e'); // 移除生产环境print
         fail('媒体控制测试失败: $e');
       }
     });
@@ -224,18 +224,18 @@ void main() {
         fail('测试前置条件失败：Socket未连接');
       }
 
-      print('开始测试系统控制指令...');
+      // print('开始测试系统控制指令...'); // 移除生产环境print
 
       try {
         // 发送锁屏指令（相对安全的系统指令）
         final lockResult = await socketService.sendSystemControl('lock');
         expect(lockResult, isTrue);
-        print('✅ 锁屏指令发送成功');
+        // print('✅ 锁屏指令发送成功'); // 移除生产环境print
 
         // 注意：不测试关机/重启等危险指令
 
       } catch (e) {
-        print('❌ 系统控制测试失败: $e');
+        // print('❌ 系统控制测试失败: $e'); // 移除生产环境print
         fail('系统控制测试失败: $e');
       }
     });
@@ -245,14 +245,14 @@ void main() {
         fail('测试前置条件失败：Socket未连接');
       }
 
-      print('开始测试连接断开...');
+      // print('开始测试连接断开...'); // 移除生产环境print
 
       // 监听断开状态
       final statusCompleter = Completer<ConnectionStatus>();
       late StreamSubscription statusSubscription;
       
       statusSubscription = socketService.statusStream.listen((status) {
-        print('断开过程中状态变化: $status');
+        // print('断开过程中状态变化: $status'); // 移除生产环境print
         if (status == ConnectionStatus.disconnected && !statusCompleter.isCompleted) {
           statusCompleter.complete(status);
         }
@@ -271,11 +271,11 @@ void main() {
         expect(finalStatus, equals(ConnectionStatus.disconnected));
         expect(socketService.currentStatus, equals(ConnectionStatus.disconnected));
         
-        print('✅ 连接断开成功');
+        // print('✅ 连接断开成功'); // 移除生产环境print
 
       } catch (e) {
         await statusSubscription.cancel();
-        print('❌ 断开连接测试失败: $e');
+        // print('❌ 断开连接测试失败: $e'); // 移除生产环境print
         fail('断开连接测试失败: $e');
       }
     });

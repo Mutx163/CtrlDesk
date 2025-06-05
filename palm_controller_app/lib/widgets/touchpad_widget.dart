@@ -21,8 +21,6 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
   static const int _mouseThrottleMs = 16; // �?0fps
   
   bool _isDragging = false;
-  double _lastPanDeltaX = 0;
-  double _lastPanDeltaY = 0;
   
   @override
   void initState() {
@@ -204,7 +202,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
         onTap: () => _handleTap(settings.hapticFeedback),
         onDoubleTap: () => _handleDoubleTap(settings.hapticFeedback),
         onLongPress: () => _handleLongPress(settings.hapticFeedback),
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
           height: double.infinity,
           child: Stack(
@@ -480,8 +478,6 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
   // 手势处理方法
   void _handlePanStart(DragStartDetails details) {
     _isDragging = true;
-    _lastPanDeltaX = 0;
-    _lastPanDeltaY = 0;
   }
 
   void _handlePanUpdate(DragUpdateDetails details, double sensitivity) {
@@ -495,9 +491,6 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     double amplifiedDeltaY = deltaY * 2.0 * sensitivity;
 
     _sendMouseMove(amplifiedDeltaX, amplifiedDeltaY);
-
-    _lastPanDeltaX = amplifiedDeltaX;
-    _lastPanDeltaY = amplifiedDeltaY;
   }
 
   void _handlePanEnd(DragEndDetails details) {

@@ -62,4 +62,4 @@ class DiscoveredDevice {
   String toString() {
     return 'DiscoveredDevice(serviceName: $serviceName, hostName: $hostName, ipAddress: $ipAddress:$port)';
   }
- 
+}

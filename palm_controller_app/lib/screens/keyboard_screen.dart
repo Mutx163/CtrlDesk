@@ -669,7 +669,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
       child: InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(12),
-        child: Container(
+        child: SizedBox(
           width: 48,
           height: 48,
           child: Center(

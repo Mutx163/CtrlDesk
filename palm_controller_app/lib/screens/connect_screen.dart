@@ -421,10 +421,10 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               ),
               const Spacer(),
               if (_isScanning)
-                Container(
+                const SizedBox(
                   width: 20,
                   height: 20,
-                  child: const CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               else
                 FilledButton.icon(

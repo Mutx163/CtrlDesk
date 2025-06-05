@@ -636,6 +636,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   }
 
   /// 媒体控制区域 - 直接操作，最高优先级
+  // ignore: unused_element
   Widget _buildMediaControlSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -859,6 +860,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   }
 
   /// 系统快捷操作区域
+  // ignore: unused_element
   Widget _buildSystemShortcutsSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -976,6 +978,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   }
 
   /// 常用快捷键区域
+  // ignore: unused_element
   Widget _buildCommonShortcutsSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1108,6 +1111,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   }
 
   /// 快速输入区域
+  // ignore: unused_element
   Widget _buildQuickInputSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
