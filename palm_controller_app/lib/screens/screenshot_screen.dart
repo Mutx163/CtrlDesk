@@ -19,7 +19,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
   int _intervalSeconds = 3;
   final List<Map<String, String>> _screenshotHistory = [];
 
-  // 发送截图控制消息
+  // 发送截图控制消�?
   void _sendScreenshotMessage(String action, {Map<String, dynamic>? params}) {
     final message = ControlMessage.systemControl(
       messageId: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -56,7 +56,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
 
     _sendScreenshotMessage(action, params: params);
     
-    // 添加到历史记录（模拟）
+    // 添加到历史记录（模拟�?
     setState(() {
       _screenshotHistory.insert(0, {
         'time': DateTime.now().toString().substring(11, 19),
@@ -68,13 +68,13 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
     // 显示提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_timerSeconds > 0 ? '${_timerSeconds}秒后开始截图' : '正在截图...'),
+        content: Text(_timerSeconds > 0 ? '${_timerSeconds}秒后开始截�? : '正在截图...'),
         duration: Duration(seconds: _timerSeconds > 0 ? _timerSeconds : 2),
       ),
     );
   }
 
-  // 开始/停止连续截图
+  // 开�?停止连续截图
   void _toggleContinuousMode() {
     setState(() {
       _continuousMode = !_continuousMode;
@@ -83,7 +83,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
     if (_continuousMode) {
       _sendScreenshotMessage('start_continuous', params: {'interval': _intervalSeconds});
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('开始连续截图，间隔${_intervalSeconds}秒')),
+        SnackBar(content: Text('开始连续截图，间隔${_intervalSeconds}�?)),
       );
     } else {
       _sendScreenshotMessage('stop_continuous');
@@ -150,7 +150,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF57C00).withOpacity(0.1),
+            color: const Color(0xFFF57C00).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(
@@ -174,7 +174,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
               Text(
                 '捕获PC屏幕内容',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -188,10 +188,10 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF57C00).withOpacity(0.05),
+        color: const Color(0xFFF57C00).withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFF57C00).withOpacity(0.2),
+          color: const Color(0xFFF57C00).withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -263,13 +263,13 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isSelected 
-                ? const Color(0xFFF57C00).withOpacity(0.1)
+                ? const Color(0xFFF57C00).withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected 
                   ? const Color(0xFFF57C00)
-                  : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -279,7 +279,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
                 icon,
                 color: isSelected 
                     ? const Color(0xFFF57C00)
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 size: 24,
               ),
               const SizedBox(height: 8),
@@ -297,7 +297,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
               Text(
                 description,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -312,10 +312,10 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -367,10 +367,10 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -410,11 +410,11 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
                       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 1, child: Text('1秒')),
-                      DropdownMenuItem(value: 3, child: Text('3秒')),
-                      DropdownMenuItem(value: 5, child: Text('5秒')),
-                      DropdownMenuItem(value: 10, child: Text('10秒')),
-                      DropdownMenuItem(value: 30, child: Text('30秒')),
+                      DropdownMenuItem(value: 1, child: Text('1�?)),
+                      DropdownMenuItem(value: 3, child: Text('3�?)),
+                      DropdownMenuItem(value: 5, child: Text('5�?)),
+                      DropdownMenuItem(value: 10, child: Text('10�?)),
+                      DropdownMenuItem(value: 30, child: Text('30�?)),
                     ],
                     onChanged: (value) => setState(() => _intervalSeconds = value ?? 3),
                   ),
@@ -462,7 +462,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -470,13 +470,13 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
             Icon(
               Icons.photo_library_outlined,
               size: 48,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 12),
             Text(
               '暂无截图历史',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ],
@@ -487,10 +487,10 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -531,7 +531,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(
@@ -540,7 +540,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
                       width: 40,
                       height: 30,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Icon(
@@ -561,9 +561,9 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
                             ),
                           ),
                           Text(
-                            '${item['time']} • ${item['file']}',
+                            '${item['time']} �?${item['file']}',
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -608,10 +608,10 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.tertiaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -641,11 +641,11 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
                 child: DropdownButtonFormField<String>(
                   value: 'original',
                   decoration: const InputDecoration(
-                    labelText: '分辨率',
+                    labelText: '分辨�?,
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'original', child: Text('原始分辨率')),
+                    DropdownMenuItem(value: 'original', child: Text('原始分辨�?)),
                     DropdownMenuItem(value: '1080p', child: Text('1080p')),
                     DropdownMenuItem(value: '720p', child: Text('720p')),
                   ],
@@ -686,7 +686,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
               Expanded(
                 child: SwitchListTile(
                   title: const Text('震动反馈'),
-                  subtitle: const Text('截图完成后震动'),
+                  subtitle: const Text('截图完成后震�?),
                   value: true,
                   onChanged: (value) {},
                   contentPadding: EdgeInsets.zero,
@@ -709,7 +709,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: const Color(0xFFF57C00).withOpacity(0.1),
+              color: const Color(0xFFF57C00).withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -720,7 +720,7 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
           ),
           const SizedBox(height: 32),
           Text(
-            '设备未连接',
+            '设备未连�?,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -728,9 +728,9 @@ class _ScreenshotScreenState extends ConsumerState<ScreenshotScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            '请先连接到PC设备后使用截图功能',
+            '请先连接到PC设备后使用截图功�?,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             textAlign: TextAlign.center,
           ),

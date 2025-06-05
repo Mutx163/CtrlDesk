@@ -129,12 +129,12 @@ class SettingsScreen extends ConsumerWidget {
     final settingsNotifier = ref.read(settingsProvider.notifier);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景色
+      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景�?
       body: _buildSettingsInterface(context, settings, settingsNotifier),
     );
   }
 
-  /// 应用设置页面 - 完整的设置管理体验
+  /// 应用设置页面 - 完整的设置管理体�?
   Widget _buildSettingsInterface(BuildContext context, AppSettings settings, SettingsNotifier settingsNotifier) {
     return CustomScrollView(
       slivers: [
@@ -166,13 +166,13 @@ class SettingsScreen extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF607D8B).withOpacity(0.1),
-            const Color(0xFF455A64).withOpacity(0.05),
+            const Color(0xFF607D8B).withValues(alpha: 0.1),
+            const Color(0xFF455A64).withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF607D8B).withOpacity(0.2),
+          color: const Color(0xFF607D8B).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -182,7 +182,7 @@ class SettingsScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF607D8B).withOpacity(0.1),
+              color: const Color(0xFF607D8B).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -193,7 +193,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(width: 16),
           
-          // 标题和描述
+          // 标题和描�?
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,9 +207,9 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '个性化您的掌控者体验',
+                  '个性化您的掌控者体�?,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -247,7 +247,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildSwitchTile(
               context,
               title: '触觉反馈',
-              subtitle: '操作时提供振动反馈',
+              subtitle: '操作时提供振动反�?,
               value: settings.hapticFeedback,
               onChanged: settingsNotifier.updateHapticFeedback,
               icon: Icons.vibration,
@@ -268,7 +268,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildSwitchTile(
               context,
               title: '自动重连',
-              subtitle: '连接断开时自动尝试重连',
+              subtitle: '连接断开时自动尝试重�?,
               value: settings.autoReconnect,
               onChanged: settingsNotifier.updateAutoReconnect,
               icon: Icons.sync,
@@ -276,7 +276,7 @@ class SettingsScreen extends ConsumerWidget {
             const Divider(height: 1),
             _buildSwitchTile(
               context,
-              title: '显示连接对话框',
+              title: '显示连接对话�?,
               subtitle: '连接时显示进度对话框',
               value: settings.showConnectionDialog,
               onChanged: settingsNotifier.updateShowConnectionDialog,
@@ -289,7 +289,7 @@ class SettingsScreen extends ConsumerWidget {
         
         const SizedBox(height: 16),
         
-        // 关于和操作
+        // 关于和操�?
         _buildSectionCard(
           context,
           title: '关于',
@@ -310,7 +310,7 @@ class SettingsScreen extends ConsumerWidget {
                 '恢复默认设置',
                 style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
-              subtitle: const Text('重置所有设置为默认值'),
+              subtitle: const Text('重置所有设置为默认�?),
               onTap: () => _showResetDialog(context, settingsNotifier),
             ),
           ],
@@ -399,7 +399,7 @@ class SettingsScreen extends ConsumerWidget {
   ) {
     return ListTile(
       leading: const Icon(Icons.tune),
-      title: const Text('鼠标灵敏度'),
+      title: const Text('鼠标灵敏�?),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -425,7 +425,7 @@ class SettingsScreen extends ConsumerWidget {
     return ListTile(
       leading: const Icon(Icons.timer),
       title: const Text('连接超时'),
-      subtitle: Text('${settings.connectionTimeout}秒'),
+      subtitle: Text('${settings.connectionTimeout}�?),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
       onTap: () => _showTimeoutDialog(context, settings, notifier),
     );
@@ -490,7 +490,7 @@ class SettingsScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [5, 10, 15, 20, 30].map((timeout) {
             return RadioListTile<int>(
-              title: Text('${timeout}秒'),
+              title: Text('${timeout}�?),
               value: timeout,
               groupValue: settings.connectionTimeout,
               onChanged: (value) {
@@ -517,7 +517,7 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('恢复默认设置'),
-        content: const Text('确定要重置所有设置为默认值吗？此操作无法撤销。'),
+        content: const Text('确定要重置所有设置为默认值吗？此操作无法撤销�?),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -528,7 +528,7 @@ class SettingsScreen extends ConsumerWidget {
               notifier.resetToDefaults();
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('设置已重置为默认值')),
+                const SnackBar(content: Text('设置已重置为默认�?)),
               );
             },
             child: const Text('确定'),
@@ -541,7 +541,7 @@ class SettingsScreen extends ConsumerWidget {
   void _showAboutDialog(BuildContext context) {
     showAboutDialog(
       context: context,
-      applicationName: '掌控者',
+      applicationName: '掌控�?,
       applicationVersion: 'v1.0.0-alpha',
       applicationIcon: Container(
         width: 64,
@@ -559,11 +559,11 @@ class SettingsScreen extends ConsumerWidget {
       children: [
         const Text('轻便快捷的手机端遥控PC工具'),
         const SizedBox(height: 16),
-        const Text('功能特色：'),
-        const Text('• 鼠标控制 - 触摸板手势操作'),
-        const Text('• 键盘输入 - 虚拟键盘和快捷键'),
-        const Text('• 媒体控制 - 播放、音量调节'),
-        const Text('• 系统控制 - 电源管理、演示助手'),
+        const Text('功能特色�?),
+        const Text('�?鼠标控制 - 触摸板手势操�?),
+        const Text('�?键盘输入 - 虚拟键盘和快捷键'),
+        const Text('�?媒体控制 - 播放、音量调�?),
+        const Text('�?系统控制 - 电源管理、演示助�?),
       ],
     );
   }

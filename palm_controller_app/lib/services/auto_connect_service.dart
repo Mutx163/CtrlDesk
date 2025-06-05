@@ -38,7 +38,7 @@ class AutoConnectService {
   String? get lastError => _lastError;
   ConnectionConfig? get currentConnection => _currentConnection;
 
-  // 应用启动时自动连接
+  // 应用启动时自动连�?
   Future<bool> startAutoConnect() async {
     if (_status == AutoConnectStatus.scanning || _status == AutoConnectStatus.connecting) {
       return false;
@@ -51,25 +51,25 @@ class AutoConnectService {
       // 启动设备发现
       final discoveryStarted = await _discoveryService.startDiscovery();
       if (!discoveryStarted) {
-        LogService.instance.warning('设备发现服务启动失败（可能缺少权限），直接进入手动连接模式', category: 'AutoConnect');
+        LogService.instance.warning('设备发现服务启动失败（可能缺少权限），直接进入手动连接模�?, category: 'AutoConnect');
         
         // 设备发现失败时，直接停用自动连接，让用户使用手动连接
-        _lastError = '设备发现需要位置权限，请使用手动连接';
+        _lastError = '设备发现需要位置权限，请使用手动连�?;
         _updateStatus(AutoConnectStatus.disabled);
         return false;
       }
 
-      // 监听发现的设备
+      // 监听发现的设�?
       _devicesSubscription = _discoveryService.devicesStream.listen(_onDevicesDiscovered);
       
-      // 监听连接状态变化
+      // 监听连接状态变�?
       _connectionStatusSubscription = _socketService.statusStream.listen(_onConnectionStatusChanged);
 
       // 设置自动连接超时
       _autoConnectTimer = Timer(const Duration(seconds: 15), () {
         if (_status == AutoConnectStatus.scanning) {
-          LogService.instance.warning('自动连接超时，停用自动连接服务', category: 'AutoConnect');
-          _lastError = '未发现可用设备，请使用手动连接';
+          LogService.instance.warning('自动连接超时，停用自动连接服�?, category: 'AutoConnect');
+          _lastError = '未发现可用设备，请使用手动连�?;
           _updateStatus(AutoConnectStatus.disabled);
         }
       });
@@ -94,7 +94,7 @@ class AutoConnectService {
       _updateStatus(AutoConnectStatus.disabled);
     }
     
-    LogService.instance.info('自动连接服务已停止', category: 'AutoConnect');
+    LogService.instance.info('自动连接服务已停�?, category: 'AutoConnect');
   }
 
   // 手动重试连接
@@ -114,9 +114,9 @@ class AutoConnectService {
       return;
     }
 
-    LogService.instance.info('发现 ${devices.length} 个设备，开始自动连接', category: 'AutoConnect');
+    LogService.instance.info('发现 ${devices.length} 个设备，开始自动连�?, category: 'AutoConnect');
     
-    // 获取最佳设备（最近发现的）
+    // 获取最佳设备（最近发现的�?
     final bestDevice = devices.first;
     _attemptConnection(bestDevice);
   }
@@ -128,10 +128,10 @@ class AutoConnectService {
     }
 
     _updateStatus(AutoConnectStatus.connecting);
-    LogService.instance.info('尝试连接到: ${device.hostName} (${device.ipAddress}:${device.port})', category: 'AutoConnect');
+    LogService.instance.info('尝试连接�? ${device.hostName} (${device.ipAddress}:${device.port})', category: 'AutoConnect');
 
     try {
-      // 停止设备发现以节省资源
+      // 停止设备发现以节省资�?
       _autoConnectTimer?.cancel();
       
       // 创建连接配置
@@ -145,13 +145,13 @@ class AutoConnectService {
         LogService.instance.info('自动连接成功: ${device.hostName}', category: 'AutoConnect');
         _updateStatus(AutoConnectStatus.connected);
         
-        // 连接成功后停止发现服务
+        // 连接成功后停止发现服�?
         await _discoveryService.stopDiscovery();
       } else {
         _lastError = _socketService.lastError ?? '连接失败';
         LogService.instance.warning('自动连接失败: $_lastError', category: 'AutoConnect');
         
-        // 连接失败，继续扫描其他设备
+        // 连接失败，继续扫描其他设�?
         _updateStatus(AutoConnectStatus.scanning);
         _startFallbackScan();
       }
@@ -162,7 +162,7 @@ class AutoConnectService {
     }
   }
 
-  // 连接状态变化回调
+  // 连接状态变化回�?
   void _onConnectionStatusChanged(ConnectionStatus status) {
     switch (status) {
       case ConnectionStatus.connected:
@@ -173,7 +173,7 @@ class AutoConnectService {
       case ConnectionStatus.disconnected:
       case ConnectionStatus.error:
         if (_status == AutoConnectStatus.connected) {
-          LogService.instance.warning('连接丢失，尝试重新连接', category: 'AutoConnect');
+          LogService.instance.warning('连接丢失，尝试重新连�?, category: 'AutoConnect');
           // 自动重连
           _attemptReconnect();
         }
@@ -185,11 +185,11 @@ class AutoConnectService {
 
   // 尝试重新连接
   Future<void> _attemptReconnect() async {
-    // 延迟2秒后重试，避免频繁重连
+    // 延迟2秒后重试，避免频繁重�?
     await Future.delayed(const Duration(seconds: 2));
     
     if (_currentConnection != null) {
-      LogService.instance.info('尝试重新连接到: ${_currentConnection!.name}', category: 'AutoConnect');
+      LogService.instance.info('尝试重新连接�? ${_currentConnection!.name}', category: 'AutoConnect');
       
       final success = await _socketService.connect(_currentConnection!);
       if (!success) {
@@ -201,24 +201,24 @@ class AutoConnectService {
     }
   }
 
-  // 备用扫描（连接失败后继续寻找其他设备）
+  // 备用扫描（连接失败后继续寻找其他设备�?
   void _startFallbackScan() {
     _autoConnectTimer = Timer(const Duration(seconds: 5), () {
       if (_status == AutoConnectStatus.scanning) {
         final devices = _discoveryService.discoveredDevices;
         if (devices.length > 1) {
-          // 尝试连接下一个设备
+          // 尝试连接下一个设�?
           final nextDevice = devices.skip(1).first;
           _attemptConnection(nextDevice);
         } else {
-          _lastError = '未发现其他可用设备，请使用手动连接';
+          _lastError = '未发现其他可用设备，请使用手动连�?;
           _updateStatus(AutoConnectStatus.disabled);
         }
       }
     });
   }
 
-  // 更新状态
+  // 更新状�?
   void _updateStatus(AutoConnectStatus status) {
     _status = status;
     _statusController.add(status);
@@ -230,5 +230,5 @@ class AutoConnectService {
     await _statusController.close();
   }
 
-  // Fallback连接到常见IP地址（移除此功能，权限问题不再尝试fallback）
+  // Fallback连接到常见IP地址（移除此功能，权限问题不再尝试fallback�?
 } 

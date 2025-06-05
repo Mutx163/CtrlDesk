@@ -44,20 +44,20 @@ class _AutoConnectWidgetState extends ConsumerState<AutoConnectWidget> {
         final autoConnectService = ref.read(autoConnectServiceProvider);
         LogService.instance.info('后台启动自动连接', category: 'App');
         
-        // 设置超时，避免无限等待
+        // 设置超时，避免无限等�?
         final result = await autoConnectService.startAutoConnect()
             .timeout(const Duration(seconds: 30));
         
         LogService.instance.info('自动连接完成: $result', category: 'App');
       } catch (e) {
-        LogService.instance.warning('自动连接超时或失败: $e', category: 'App');
+        LogService.instance.warning('自动连接超时或失�? $e', category: 'App');
       }
     });
   }
 
   @override
   void dispose() {
-    // 清理资源，但不等待
+    // 清理资源，但不等�?
     if (_autoConnectStarted) {
       try {
         final autoConnectService = ref.read(autoConnectServiceProvider);

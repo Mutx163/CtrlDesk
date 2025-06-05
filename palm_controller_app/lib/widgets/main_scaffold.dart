@@ -33,7 +33,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   @override
   void initState() {
     super.initState();
-    // 验证 initialPage 不超过当前页面列表长度，防止深链接时的 RangeError
+    // 验证 initialPage 不超过当前页面列表长度，防止深链接时�?RangeError
     _currentPageIndex = math.min(
       widget.pageIndex,
       _getPagesForConnectionStatus(ref.read(connectionStatusProvider)).length - 1,
@@ -95,14 +95,12 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     );
   }
 
-  /// 根据连接状态获取页面列表
-  List<Widget> _getPagesForConnectionStatus(ConnectionStatus connectionStatus) {
+  /// 根据连接状态获取页面列�?  List<Widget> _getPagesForConnectionStatus(ConnectionStatus connectionStatus) {
     if (connectionStatus == ConnectionStatus.connected) {
       // 已连接状态：6个页面（媒体、触摸、键盘、截图、监控、工具）
       return [
         const ControlScreen(),      // 0 - 媒体控制
-        const TouchpadScreen(),     // 1 - 触摸板
-        const KeyboardScreen(),     // 2 - 键盘
+        const TouchpadScreen(),     // 1 - 触摸�?        const KeyboardScreen(),     // 2 - 键盘
         const ScreenshotScreen(),   // 3 - 截图
         const MonitorScreen(),      // 4 - 监控
         const ToolsScreen(),        // 5 - 工具
@@ -159,12 +157,10 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     }
     
     // 可以在这里添加路由历史记录更新逻辑
-    // 但为了避免重复构建，暂时注释掉
-    // context.go(newRoute);
+    // 但为了避免重复构建，暂时注释�?    // context.go(newRoute);
   }
 
-  /// 兼容性方法：根据索引获取页面（保留原有逻辑）
-  Widget _getPageForIndex(int index) {
+  /// 兼容性方法：根据索引获取页面（保留原有逻辑�?  Widget _getPageForIndex(int index) {
     switch (index) {
       case 0:
         return const ControlScreen();

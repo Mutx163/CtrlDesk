@@ -16,7 +16,7 @@ void main() {
         await socketService.dispose();
       } catch (e) {
         // 忽略dispose时的异常，这在测试中是正常的
-        print('测试清理时的异常（可忽略）: $e');
+        // 测试清理时的异常（可忽略）: $e
       }
     });
 

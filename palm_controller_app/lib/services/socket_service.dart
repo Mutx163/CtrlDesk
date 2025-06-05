@@ -17,9 +17,8 @@ class SocketService {
   static final SocketService _instance = SocketService._internal();
   factory SocketService() => _instance;
   SocketService._internal() {
-    // 发送初始状态
-    _updateStatus(_currentStatus);
-    LogService.instance.info('SocketService初始化完成，当前状态: ${_currentStatus.name}', category: 'Socket');
+    // 发送初始状�?    _updateStatus(_currentStatus);
+    LogService.instance.info('SocketService初始化完成，当前状�? ${_currentStatus.name}', category: 'Socket');
   }
 
   Socket? _socket;
@@ -32,8 +31,7 @@ class SocketService {
       StreamController<ConnectionStatus>.broadcast();
   Stream<ConnectionStatus> get statusStream => _statusController.stream;
 
-  // 消息流
-  final StreamController<ControlMessage> _messageController =
+  // 消息�?  final StreamController<ControlMessage> _messageController =
       StreamController<ControlMessage>.broadcast();
   Stream<ControlMessage> get messageStream => _messageController.stream;
 
@@ -91,8 +89,7 @@ class SocketService {
         }
       );
 
-      // 发送认证消息
-      if (config.password != null && config.password!.isNotEmpty) {
+      // 发送认证消�?      if (config.password != null && config.password!.isNotEmpty) {
         await sendMessage(ControlMessage.authentication(
           messageId: _uuid.v4(),
           password: config.password,
@@ -135,8 +132,7 @@ class SocketService {
     _updateStatus(ConnectionStatus.disconnected);
   }
 
-  // 发送消息
-  Future<bool> sendMessage(ControlMessage message) async {
+  // 发送消�?  Future<bool> sendMessage(ControlMessage message) async {
     if (_socket == null || _currentStatus != ConnectionStatus.connected) {
       return false;
     }
@@ -185,8 +181,7 @@ class SocketService {
     }
   }
 
-  // 发送鼠标控制指令
-  Future<bool> sendMouseControl({
+  // 发送鼠标控制指�?  Future<bool> sendMouseControl({
     required String action,
     double deltaX = 0,
     double deltaY = 0,
@@ -204,8 +199,7 @@ class SocketService {
     return await sendMessage(message);
   }
 
-  // 发送键盘控制指令
-  Future<bool> sendKeyboardControl({
+  // 发送键盘控制指�?  Future<bool> sendKeyboardControl({
     required String action,
     String? keyCode,
     String? text,
@@ -221,8 +215,7 @@ class SocketService {
     return await sendMessage(message);
   }
 
-  // 发送媒体控制指令
-  Future<bool> sendMediaControl(String action) async {
+  // 发送媒体控制指�?  Future<bool> sendMediaControl(String action) async {
     final message = ControlMessage.mediaControl(
       messageId: _uuid.v4(),
       action: action,
@@ -230,8 +223,7 @@ class SocketService {
     return await sendMessage(message);
   }
 
-  // 发送系统控制指令
-  Future<bool> sendSystemControl(String action) async {
+  // 发送系统控制指�?  Future<bool> sendSystemControl(String action) async {
     final message = ControlMessage.systemControl(
       messageId: _uuid.v4(),
       action: action,
@@ -273,7 +265,7 @@ class SocketService {
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       sendMessage(ControlMessage.heartbeat(messageId: _uuid.v4())).then((success) {
         if (!success) {
-          LogService.instance.warning('心跳消息发送失败，但保持连接状态', category: 'Socket');
+          LogService.instance.warning('心跳消息发送失败，但保持连接状�?, category: 'Socket');
         }
       });
     });
@@ -285,8 +277,7 @@ class SocketService {
     _heartbeatTimer = null;
   }
 
-  // 更新状态
-  void _updateStatus(ConnectionStatus status) {
+  // 更新状�?  void _updateStatus(ConnectionStatus status) {
     _currentStatus = status;
     _statusController.add(status);
   }

@@ -28,7 +28,7 @@ class PalmControllerApp extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     
     return MaterialApp.router(
-      title: '掌控者 - PalmController',
+      title: '掌控�?- PalmController',
       debugShowCheckedModeBanner: false,
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
@@ -52,8 +52,7 @@ class PalmControllerApp extends ConsumerWidget {
       ),
       useMaterial3: true,
       
-      // AppBar 现代化设计
-      appBarTheme: AppBarTheme(
+      // AppBar 现代化设�?      appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -70,8 +69,7 @@ class PalmControllerApp extends ConsumerWidget {
         ),
       ),
       
-      // Card 现代化设计
-      cardTheme: CardTheme(
+      // Card 现代化设�?      cardTheme: CardTheme(
         elevation: 0,
         color: Colors.white,
         surfaceTintColor: Colors.transparent,
@@ -85,8 +83,7 @@ class PalmControllerApp extends ConsumerWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       ),
       
-      // 按钮现代化设计
-      filledButtonTheme: FilledButtonThemeData(
+      // 按钮现代化设�?      filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
@@ -136,10 +133,9 @@ class PalmControllerApp extends ConsumerWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       
-      // Chip 现代化设计
-      chipTheme: ChipThemeData(
+      // Chip 现代化设�?      chipTheme: ChipThemeData(
         backgroundColor: surfaceColor,
-        selectedColor: primaryColor.withOpacity(0.1),
+        selectedColor: primaryColor.withValues(alpha: 0.1),
         side: BorderSide(color: Colors.grey.shade300),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -150,8 +146,7 @@ class PalmControllerApp extends ConsumerWidget {
         ),
       ),
       
-      // 分割线设计
-      dividerTheme: DividerThemeData(
+      // 分割线设�?      dividerTheme: DividerThemeData(
         color: Colors.grey.shade200,
         thickness: 1,
         space: 1,
@@ -161,8 +156,7 @@ class PalmControllerApp extends ConsumerWidget {
 
   /// 构建深色主题 - 现代化设计语言
   ThemeData _buildDarkTheme() {
-    const primaryColor = Color(0xFF64B5F6); // 适合深色的蓝色
-    const surfaceColor = Color(0xFF1E1E1E); // 深色背景
+    const primaryColor = Color(0xFF64B5F6); // 适合深色的蓝�?    const surfaceColor = Color(0xFF1E1E1E); // 深色背景
     const cardColor = Color(0xFF2D2D2D); // 卡片背景
     
     return ThemeData(
@@ -238,8 +232,7 @@ class PalmControllerApp extends ConsumerWidget {
         ),
       ),
       
-      // 输入框深色设计
-      inputDecorationTheme: InputDecorationTheme(
+      // 输入框深色设�?      inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: cardColor,
         border: OutlineInputBorder(
@@ -260,7 +253,7 @@ class PalmControllerApp extends ConsumerWidget {
       // Chip 深色设计
       chipTheme: ChipThemeData(
         backgroundColor: cardColor,
-        selectedColor: primaryColor.withOpacity(0.2),
+        selectedColor: primaryColor.withValues(alpha: 0.2),
         side: BorderSide(color: Colors.grey.shade600),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -271,8 +264,7 @@ class PalmControllerApp extends ConsumerWidget {
         ),
       ),
       
-      // 分割线深色设计
-      dividerTheme: DividerThemeData(
+      // 分割线深色设�?      dividerTheme: DividerThemeData(
         color: Colors.grey.shade700,
         thickness: 1,
         space: 1,
@@ -320,8 +312,7 @@ final GoRouter _router = GoRouter(
       name: 'connect',
       builder: (context, state) => const MainScaffold(pageIndex: 0),
     ),
-    // 设置页面独立，不包含底部导航栏
-    GoRoute(
+    // 设置页面独立，不包含底部导航�?    GoRoute(
       path: '/settings',
       name: 'settings',
       builder: (context, state) => const SettingsScreen(),
@@ -329,7 +320,7 @@ final GoRouter _router = GoRouter(
   ],
   errorBuilder: (context, state) => Scaffold(
     appBar: AppBar(
-      title: const Text('页面未找到'),
+      title: const Text('页面未找�?),
     ),
     body: Center(
       child: Column(
@@ -342,7 +333,7 @@ final GoRouter _router = GoRouter(
           ),
           const SizedBox(height: 16),
           const Text(
-            '页面未找到',
+            '页面未找�?,
             style: TextStyle(fontSize: 18),
           ),
           const SizedBox(height: 8),

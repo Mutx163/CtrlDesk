@@ -34,7 +34,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
         _statusMessage = '正在启动应用...';
       });
       
-      // 短暂延迟确保UI初始化完成
+      // 短暂延迟确保UI初始化完�?
       await Future.delayed(const Duration(milliseconds: 500));
       
       // 检查是否有历史连接配置
@@ -43,7 +43,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
       
       if (recentConnection != null) {
         setState(() {
-          _statusMessage = '正在连接到 ${recentConnection.name}...';
+          _statusMessage = '正在连接�?${recentConnection.name}...';
         });
         
         LogService.instance.info('发现历史连接配置: ${recentConnection.name} (${recentConnection.ipAddress})', category: 'Startup');
@@ -53,7 +53,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
         
         if (connected) {
           setState(() {
-            _statusMessage = '连接成功！';
+            _statusMessage = '连接成功�?;
           });
           
           // 连接成功，短暂显示成功消息后进入应用
@@ -74,10 +74,10 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
           });
         }
       } else {
-        // 没有历史连接，直接进入应用
-        LogService.instance.info('没有历史连接配置，直接进入应用', category: 'Startup');
+        // 没有历史连接，直接进入应�?
+        LogService.instance.info('没有历史连接配置，直接进入应�?, category: 'Startup');
         setState(() {
-          _statusMessage = '欢迎使用掌控者';
+          _statusMessage = '欢迎使用掌控�?;
         });
         await Future.delayed(const Duration(milliseconds: 800));
         setState(() {
@@ -87,7 +87,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
       }
     } catch (e) {
       LogService.instance.error('启动序列异常: $e', category: 'Startup');
-      // 出现异常时直接进入应用
+      // 出现异常时直接进入应�?
       setState(() {
         _showStartupScreen = false;
         _isInitializing = false;
@@ -116,7 +116,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -132,7 +132,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
             
             // 应用名称
             Text(
-              '掌控者',
+              '掌控�?,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -142,13 +142,13 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
             Text(
               'PalmController',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
               ),
             ),
             
             const SizedBox(height: 48),
             
-            // 加载指示器
+            // 加载指示�?
             const SizedBox(
               width: 32,
               height: 32,
@@ -160,11 +160,11 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
             
             const SizedBox(height: 16),
             
-            // 状态消息
+            // 状态消�?
             Text(
               _statusMessage,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
               textAlign: TextAlign.center,
             ),

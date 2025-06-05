@@ -24,8 +24,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
   final _uuid = const Uuid();
   bool _showPermissionCard = true;
   
-  // 设备发现相关状态
-  final DiscoveryService _discoveryService = DiscoveryService();
+  // 设备发现相关状�?  final DiscoveryService _discoveryService = DiscoveryService();
   List<DiscoveredDevice> _discoveredDevices = [];
   bool _isScanning = false;
   String? _scanError;
@@ -38,11 +37,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       if (mounted) {
         ref.read(connectionManagerProvider.notifier).setNavigationCallback(() {
           if (mounted && context.canPop()) {
-            // 如果可以返回，说明是从其他页面进入的连接页面，直接返回
-            context.pop();
+            // 如果可以返回，说明是从其他页面进入的连接页面，直接返�?            context.pop();
           } else {
-            // 否则导航到控制界面
-            context.go('/');
+            // 否则导航到控制界�?            context.go('/');
           }
         });
         // 检查权限状态，决定是否显示权限卡片
@@ -56,8 +53,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     final status = await Permission.locationWhenInUse.status;
     if (mounted) {
       setState(() {
-        // 只有在权限被拒绝且用户没有手动关闭卡片时才显示
-        _showPermissionCard = (status == PermissionStatus.denied || status == PermissionStatus.permanentlyDenied);
+        // 只有在权限被拒绝且用户没有手动关闭卡片时才显�?        _showPermissionCard = (status == PermissionStatus.denied || status == PermissionStatus.permanentlyDenied);
       });
     }
   }
@@ -79,8 +75,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       // 使用已保存的配置连接
       connectionConfig = config;
     } else {
-      // 使用表单输入创建新配置
-      if (!_formKey.currentState!.validate()) return;
+      // 使用表单输入创建新配�?      if (!_formKey.currentState!.validate()) return;
       
       connectionConfig = ConnectionConfig(
         id: _uuid.v4(),
@@ -92,8 +87,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         autoConnect: false,
       );
       
-      // 保存新配置
-      await ref.read(connectionConfigProvider.notifier).addConfig(connectionConfig);
+      // 保存新配�?      await ref.read(connectionConfigProvider.notifier).addConfig(connectionConfig);
     }
 
     // 执行连接
@@ -110,14 +104,14 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('权限已授予，自动发现功能已启用'),
+          content: Text('权限已授予，自动发现功能已启�?),
           backgroundColor: Colors.green,
         ),
       );
     } else if (status == PermissionStatus.permanentlyDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('权限被永久拒绝，请在设置中手动开启位置权限'),
+          content: const Text('权限被永久拒绝，请在设置中手动开启位置权�?),
           action: SnackBarAction(
             label: '打开设置',
             onPressed: () => openAppSettings(),
@@ -149,13 +143,13 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       if (devices.isEmpty) {
         if (!mounted) return;
         setState(() {
-          _scanError = '未发现任何设备，请确保PC端程序正在运行';
+          _scanError = '未发现任何设备，请确保PC端程序正在运�?;
         });
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('发现 ${devices.length} 个设备'),
+              content: Text('发现 ${devices.length} 个设�?),
               backgroundColor: Colors.green,
             ),
           );
@@ -212,7 +206,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              '应用可以自动发现局域网内的PC设备。此功能需要位置权限来进行网络扫描。如果您不授予权限，仍可使用手动连接功能。',
+              '应用可以自动发现局域网内的PC设备。此功能需要位置权限来进行网络扫描。如果您不授予权限，仍可使用手动连接功能�?,
             ),
             const SizedBox(height: 12),
             Row(
@@ -270,7 +264,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.search, size: 18),
-                  label: Text(_isScanning ? '扫描中...' : '扫描设备'),
+                  label: Text(_isScanning ? '扫描�?..' : '扫描设备'),
                 ),
               ],
             ),
@@ -279,10 +273,10 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
+                  color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -309,7 +303,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             ],
             if (_discoveredDevices.isNotEmpty) ...[
               Text(
-                '发现的设备 (${_discoveredDevices.length})',
+                '发现的设�?(${_discoveredDevices.length})',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
@@ -319,7 +313,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -395,9 +389,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     } else if (diff.inSeconds < 60) {
       return '${diff.inSeconds}秒前';
     } else if (diff.inMinutes < 60) {
-      return '${diff.inMinutes}分钟前';
+      return '${diff.inMinutes}分钟�?;
     } else {
-      return '${diff.inHours}小时前';
+      return '${diff.inHours}小时�?;
     }
   }
 
@@ -487,13 +481,13 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.green.withOpacity(0.1),
-            Colors.orange.withOpacity(0.05),
+            Colors.green.withValues(alpha: 0.1),
+            Colors.orange.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.green.withOpacity(0.2),
+          color: Colors.green.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -503,7 +497,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -514,8 +508,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           ),
           const SizedBox(width: 16),
           
-          // 标题和描述
-          Expanded(
+          // 标题和描�?          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -530,7 +523,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                 Text(
                   '自动发现和连接您的Windows PC',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -550,12 +543,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.green.withOpacity(0.2),
+          color: Colors.green.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.green.withOpacity(0.1),
+            color: Colors.green.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -600,16 +593,15 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           ),
           const SizedBox(height: 16),
           
-          // 发现的设备列表
-          if (_discoveredDevices.isNotEmpty)
+          // 发现的设备列�?          if (_discoveredDevices.isNotEmpty)
             ...(_discoveredDevices.map((device) => _buildDiscoveredDeviceCard(device)).toList())
           else if (_scanError != null)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.withOpacity(0.2)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -628,9 +620,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -661,12 +653,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.orange.withOpacity(0.2),
+          color: Colors.orange.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.1),
+            color: Colors.orange.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -701,12 +693,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               controller: _nameController,
               decoration: InputDecoration(
                 labelText: '连接名称',
-                hintText: '例如：我的电脑',
+                hintText: '例如：我的电�?,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return '请输入连接名称';
+                  return '请输入连接名�?;
                 }
                 return null;
               },
@@ -718,7 +710,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               controller: _ipController,
               decoration: InputDecoration(
                 labelText: 'IP地址',
-                hintText: '例如：192.168.1.100',
+                hintText: '例如�?92.168.1.100',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               validator: (value) {
@@ -734,8 +726,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             ),
             const SizedBox(height: 16),
             
-            // 端口和密码
-            Row(
+            // 端口和密�?            Row(
               children: [
                 Expanded(
                   child: TextFormField(
@@ -747,7 +738,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return '请输入端口';
+                        return '请输入端�?;
                       }
                       final port = int.tryParse(value.trim());
                       if (port == null || port < 1 || port > 65535) {
@@ -762,7 +753,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                   child: TextFormField(
                     controller: _passwordController,
                     decoration: InputDecoration(
-                      labelText: '密码 (可选)',
+                      labelText: '密码 (可�?',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     obscureText: true,
@@ -784,7 +775,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(Icons.link_rounded),
-                label: Text(connectionManager.isLoading ? '连接中...' : '连接'),
+                label: Text(connectionManager.isLoading ? '连接�?..' : '连接'),
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.orange,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -799,9 +790,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withOpacity(0.2)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
@@ -835,12 +826,12 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.2),
+          color: Colors.blue.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -873,7 +864,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Row(
@@ -882,7 +873,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '暂无连接历史，添加新连接开始使用',
+                      '暂无连接历史，添加新连接开始使�?,
                       style: TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -894,17 +885,17 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               children: connectionConfigs.map((config) => Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
                 child: ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.computer, color: Colors.blue, size: 20),
@@ -924,7 +915,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
                             context: context,
                             builder: (context) => AlertDialog(
                               title: const Text('删除连接'),
-                              content: Text('确定要删除连接 "${config.name}" 吗？'),
+                              content: Text('确定要删除连�?"${config.name}" 吗？'),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.of(context).pop(false),
@@ -961,22 +952,21 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     );
   }
 
-  /// 发现的设备卡片
-  Widget _buildDiscoveredDeviceCard(DiscoveredDevice device) {
+  /// 发现的设备卡�?  Widget _buildDiscoveredDeviceCard(DiscoveredDevice device) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.05),
+        color: Colors.green.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withOpacity(0.2)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.computer, color: Colors.green, size: 20),
@@ -1046,11 +1036,11 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
   String _getStatusText(ConnectionStatus status) {
     switch (status) {
       case ConnectionStatus.connected:
-        return '已连接';
+        return '已连�?;
       case ConnectionStatus.connecting:
-        return '连接中';
+        return '连接�?;
       case ConnectionStatus.disconnected:
-        return '未连接';
+        return '未连�?;
       case ConnectionStatus.error:
         return '连接错误';
     }

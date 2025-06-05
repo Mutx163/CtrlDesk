@@ -48,7 +48,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
     final currentConnection = ref.watch(currentConnectionProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景色
+      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景�?
       body: connectionStatus == ConnectionStatus.connected
           ? _buildTouchpadController(context, currentConnection)
           : _buildNotConnectedView(context),
@@ -68,7 +68,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
             child: _buildModernTouchpadArea(context),
           ),
           
-          // 底部快捷操作栏
+          // 底部快捷操作�?
           _buildQuickActionBar(context),
         ],
       ),
@@ -84,12 +84,12 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
         color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -97,7 +97,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
       ),
       child: Row(
         children: [
-          // 触摸板图标 - 动画效果
+          // 触摸板图�?- 动画效果
           AnimatedBuilder(
             animation: _pulseAnimation,
             builder: (context, child) {
@@ -106,7 +106,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -120,7 +120,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
           ),
           const SizedBox(width: 16),
           
-          // 标题和状态
+          // 标题和状�?
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,9 +134,9 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '已连接 ${currentConnection?.name ?? 'PC'}',
+                  '已连�?${currentConnection?.name ?? 'PC'}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8),
+                    color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -147,10 +147,10 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.green.withOpacity(0.3),
+                color: Colors.green.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -191,12 +191,12 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
               blurRadius: 30,
               offset: const Offset(0, 15),
             ),
@@ -210,7 +210,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
     );
   }
 
-  /// 底部快捷操作栏
+  /// 底部快捷操作�?
   Widget _buildQuickActionBar(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(20),
@@ -219,12 +219,12 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
         color: Theme.of(context).colorScheme.secondaryContainer,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -258,7 +258,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
     );
   }
 
-  /// 快捷操作项
+  /// 快捷操作�?
   Widget _buildQuickAction({
     required IconData icon,
     required String label,
@@ -276,7 +276,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
         Text(
           label,
           style: TextStyle(
-            color: color.withOpacity(0.8),
+            color: color.withValues(alpha: 0.8),
             fontSize: 11,
             fontWeight: FontWeight.w500,
           ),
@@ -285,7 +285,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
     );
   }
 
-  /// 未连接状态界面
+  /// 未连接状态界�?
   Widget _buildNotConnectedView(BuildContext context) {
     return SafeArea(
       child: Container(
@@ -293,7 +293,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 主图标 - 动画效果
+            // 主图�?- 动画效果
             AnimatedBuilder(
               animation: _pulseAnimation,
               builder: (context, child) {
@@ -305,12 +305,12 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
                       color: Theme.of(context).colorScheme.primaryContainer,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+                          color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
                           blurRadius: 30,
                           offset: const Offset(0, 15),
                         ),
@@ -340,9 +340,9 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
             
             // 描述
             Text(
-              '精确的鼠标控制体验\n连接PC设备后即可使用',
+              '精确的鼠标控制体验\n连接PC设备后即可使�?,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -350,7 +350,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
             
             const SizedBox(height: 48),
             
-            // 功能特性卡片
+            // 功能特性卡�?
             _buildFeatureCards(context),
             
             const SizedBox(height: 40),
@@ -363,7 +363,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
     );
   }
 
-  /// 功能特性卡片
+  /// 功能特性卡�?
   Widget _buildFeatureCards(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -371,12 +371,12 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
         color: Theme.of(context).colorScheme.secondaryContainer,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -385,7 +385,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
       child: Column(
         children: [
           Text(
-            '支持的手势操作',
+            '支持的手势操�?,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: Theme.of(context).colorScheme.onSecondaryContainer,
@@ -429,7 +429,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
     );
   }
 
-  /// 功能项
+  /// 功能�?
   Widget _buildFeatureItem({
     required IconData icon,
     required String title,
@@ -441,7 +441,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -467,7 +467,7 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
           Text(
             description,
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               fontSize: 10,
             ),
             textAlign: TextAlign.center,
@@ -486,13 +486,13 @@ class _TouchpadScreenState extends ConsumerState<TouchpadScreen>
         gradient: LinearGradient(
           colors: [
             Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),

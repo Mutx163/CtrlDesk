@@ -61,9 +61,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     // 提供触觉反馈
     HapticFeedback.lightImpact();
     
-    // 只有在使用当前修饰键状态时才自动清除（模拟真实键盘行为）
-    // 快捷键（显式传递修饰键）不会清除切换状态
-    if (useCurrentModifiers && modifiers.isNotEmpty) {
+    // 只有在使用当前修饰键状态时才自动清除（模拟真实键盘行为�?    // 快捷键（显式传递修饰键）不会清除切换状�?    if (useCurrentModifiers && modifiers.isNotEmpty) {
       _clearModifierKeys();
     }
   }
@@ -89,15 +87,13 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     final connectionStatus = ref.watch(connectionStatusProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景色
-      body: connectionStatus == ConnectionStatus.connected
+      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景�?      body: connectionStatus == ConnectionStatus.connected
           ? _buildKeyboardInputter(context)
           : _buildNotConnectedView(),
     );
   }
 
-  /// 键盘输入器 - 完整的键盘控制体验
-  Widget _buildKeyboardInputter(BuildContext context) {
+  /// 键盘输入�?- 完整的键盘控制体�?  Widget _buildKeyboardInputter(BuildContext context) {
     return CustomScrollView(
       slivers: [
         // 头部标题
@@ -110,23 +106,19 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
           child: _buildMainInputArea(context),
         ),
         
-        // 修饰键控制面板
-        SliverToBoxAdapter(
+        // 修饰键控制面�?        SliverToBoxAdapter(
           child: _buildModifierPanel(context),
         ),
         
-        // 快捷键网格
-        SliverToBoxAdapter(
+        // 快捷键网�?        SliverToBoxAdapter(
           child: _buildShortcutGrid(context),
         ),
         
-        // 功能键面板
-        SliverToBoxAdapter(
+        // 功能键面�?        SliverToBoxAdapter(
           child: _buildFunctionPanel(context),
         ),
         
-        // 方向键控制
-        SliverToBoxAdapter(
+        // 方向键控�?        SliverToBoxAdapter(
           child: _buildDirectionControl(context),
         ),
         
@@ -150,13 +142,13 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF3F51B5).withOpacity(0.1),
-            const Color(0xFF303F9F).withOpacity(0.05),
+            const Color(0xFF3F51B5).withValues(alpha: 0.1),
+            const Color(0xFF303F9F).withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -166,7 +158,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF3F51B5).withOpacity(0.1),
+              color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -177,13 +169,12 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
           ),
           const SizedBox(width: 16),
           
-          // 标题和描述
-          Expanded(
+          // 标题和描�?          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '键盘输入器',
+                  '键盘输入�?,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF3F51B5),
@@ -204,7 +195,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
                     Text(
                       currentConnection?.name ?? 'Windows PC',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -226,12 +217,12 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3F51B5).withOpacity(0.1),
+            color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -259,15 +250,14 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
           ),
           const SizedBox(height: 16),
           
-          // 输入框
-          TextField(
+          // 输入�?          TextField(
             controller: _textController,
             focusNode: _focusNode,
             decoration: InputDecoration(
               hintText: '在此输入文本，回车发送到PC...',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: const Color(0xFF3F51B5).withOpacity(0.3)),
+                borderSide: BorderSide(color: const Color(0xFF3F51B5).withValues(alpha: 0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -283,8 +273,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
           ),
           const SizedBox(height: 16),
           
-          // 发送按钮
-          SizedBox(
+          // 发送按�?          SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: () {
@@ -295,7 +284,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
                 }
               },
               icon: const Icon(Icons.send_rounded),
-              label: const Text('发送文本'),
+              label: const Text('发送文�?),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF3F51B5),
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -307,8 +296,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 修饰键面板
-  Widget _buildModifierPanel(BuildContext context) {
+  /// 修饰键面�?  Widget _buildModifierPanel(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -316,12 +304,12 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3F51B5).withOpacity(0.1),
+            color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -339,7 +327,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '修饰键',
+                '修饰�?,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF3F51B5),
@@ -381,14 +369,13 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 修饰键按钮
-  Widget _buildModifierKey(String label, bool isPressed, VoidCallback onTap) {
+  /// 修饰键按�?  Widget _buildModifierKey(String label, bool isPressed, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: isPressed ? const Color(0xFF3F51B5) : const Color(0xFF3F51B5).withOpacity(0.1),
+          color: isPressed ? const Color(0xFF3F51B5) : const Color(0xFF3F51B5).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: const Color(0xFF3F51B5).withOpacity(isPressed ? 1.0 : 0.3),
@@ -408,14 +395,13 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 快捷键网格
-  Widget _buildShortcutGrid(BuildContext context) {
+  /// 快捷键网�?  Widget _buildShortcutGrid(BuildContext context) {
     final shortcuts = [
       {'label': '复制', 'keys': ['ctrl', 'c'], 'icon': Icons.copy_rounded},
       {'label': '粘贴', 'keys': ['ctrl', 'v'], 'icon': Icons.paste_rounded},
       {'label': '剪切', 'keys': ['ctrl', 'x'], 'icon': Icons.cut_rounded},
       {'label': '撤销', 'keys': ['ctrl', 'z'], 'icon': Icons.undo_rounded},
-      {'label': '全选', 'keys': ['ctrl', 'a'], 'icon': Icons.select_all_rounded},
+      {'label': '全�?, 'keys': ['ctrl', 'a'], 'icon': Icons.select_all_rounded},
       {'label': '保存', 'keys': ['ctrl', 's'], 'icon': Icons.save_rounded},
     ];
 
@@ -426,7 +412,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -442,7 +428,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '常用快捷键',
+                '常用快捷�?,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF3F51B5),
@@ -478,8 +464,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 功能键面板
-  Widget _buildFunctionPanel(BuildContext context) {
+  /// 功能键面�?  Widget _buildFunctionPanel(BuildContext context) {
     final functionKeys = ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'];
 
     return Container(
@@ -489,7 +474,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -505,7 +490,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '功能键',
+                '功能�?,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF3F51B5),
@@ -533,8 +518,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 方向键控制
-  Widget _buildDirectionControl(BuildContext context) {
+  /// 方向键控�?  Widget _buildDirectionControl(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -542,7 +526,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -558,7 +542,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '方向键 & 特殊键',
+                '方向�?& 特殊�?,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF3F51B5),
@@ -572,8 +556,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
               // 上方向键
               _buildDirectionKey(Icons.keyboard_arrow_up_rounded, () => _sendKey('ArrowUp')),
               const SizedBox(height: 8),
-              // 左右方向键
-              Row(
+              // 左右方向�?              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildDirectionKey(Icons.keyboard_arrow_left_rounded, () => _sendKey('ArrowLeft')),
@@ -582,8 +565,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              // 特殊键
-              Row(
+              // 特殊�?              Row(
                 children: [
                   Expanded(child: _buildSpecialKey('Enter', () => _sendKey('Enter'))),
                   const SizedBox(width: 8),
@@ -601,14 +583,13 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 快捷键按钮
-  Widget _buildShortcutButton({
+  /// 快捷键按�?  Widget _buildShortcutButton({
     required IconData icon,
     required String label,
     required VoidCallback onPressed,
   }) {
     return Material(
-      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onPressed,
@@ -636,10 +617,9 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 功能键按钮
-  Widget _buildFunctionKeyButton(String key) {
+  /// 功能键按�?  Widget _buildFunctionKeyButton(String key) {
     return Material(
-      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: () => _sendKey(key),
@@ -661,10 +641,9 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 方向键按钮
-  Widget _buildDirectionKey(IconData icon, VoidCallback onPressed) {
+  /// 方向键按�?  Widget _buildDirectionKey(IconData icon, VoidCallback onPressed) {
     return Material(
-      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onPressed,
@@ -680,10 +659,9 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 特殊键按钮
-  Widget _buildSpecialKey(String label, VoidCallback onPressed) {
+  /// 特殊键按�?  Widget _buildSpecialKey(String label, VoidCallback onPressed) {
     return Material(
-      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      color: const Color(0xFF3F51B5).withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onPressed,
@@ -720,13 +698,13 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF3F51B5).withOpacity(0.1),
-                    const Color(0xFF303F9F).withOpacity(0.05),
+                    const Color(0xFF3F51B5).withValues(alpha: 0.1),
+                    const Color(0xFF303F9F).withValues(alpha: 0.05),
                   ],
                 ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFF3F51B5).withOpacity(0.2),
+                  color: const Color(0xFF3F51B5).withValues(alpha: 0.2),
                   width: 2,
                 ),
               ),
@@ -739,7 +717,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
             const SizedBox(height: 32),
             
             Text(
-              '键盘输入器',
+              '键盘输入�?,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF3F51B5),
@@ -750,7 +728,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
             Text(
               '需要连接PC设备才能使用',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -758,7 +736,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
             Text(
               '连接后即可享受完整的键盘控制体验',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -769,17 +747,17 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFF3F51B5).withOpacity(0.05),
+                color: const Color(0xFF3F51B5).withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFF3F51B5).withOpacity(0.2),
+                  color: const Color(0xFF3F51B5).withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
               child: Column(
                 children: [
                   Text(
-                    '支持的输入功能',
+                    '支持的输入功�?,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF3F51B5),
@@ -820,8 +798,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     );
   }
 
-  /// 键盘功能项展示
-  Widget _buildKeyboardFeature(IconData icon, String label) {
+  /// 键盘功能项展�?  Widget _buildKeyboardFeature(IconData icon, String label) {
     return Column(
       children: [
         Icon(

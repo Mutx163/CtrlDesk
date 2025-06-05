@@ -9,10 +9,10 @@ import '../services/log_service.dart'; // Re-added LogService import
 
 // Socket服务Provider
 final socketServiceProvider = Provider<SocketService>((ref) {
-  return SocketService(); // SocketService本身是单例，每次调用SocketService()都返回同一个实例
+  return SocketService(); // SocketService本身是单例，每次调用SocketService()都返回同一个实�?
 });
 
-// 音量状态数据模型
+// 音量状态数据模�?
 class VolumeState {
   final double? volume; // Changed to nullable double
   final bool isMuted;
@@ -36,11 +36,11 @@ class VolumeState {
 // 连接状态Provider
 class ConnectionStatusNotifier extends StateNotifier<ConnectionStatus> {
   ConnectionStatusNotifier(this._socketService) : super(ConnectionStatus.disconnected) {
-    // 监听SocketService的状态变化
+    // 监听SocketService的状态变�?
     _socketService.statusStream.listen((status) {
       state = status;
     });
-    // 设置初始状态
+    // 设置初始状�?
     state = _socketService.currentStatus;
   }
 
@@ -61,7 +61,7 @@ class ConnectionConfigNotifier extends StateNotifier<List<ConnectionConfig>> {
   static const String _storageKey = 'connection_configs';
   bool _isLoaded = false;
 
-  // 加载保存的连接配置
+  // 加载保存的连接配�?
   Future<void> _loadConfigs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -76,21 +76,21 @@ class ConnectionConfigNotifier extends StateNotifier<List<ConnectionConfig>> {
       _isLoaded = true;
       
       // 记录加载结果
-      LogService.instance.info('连接配置加载完成，共 ${configs.length} 个配置', category: 'Config');
+      LogService.instance.info('连接配置加载完成，共 ${configs.length} 个配�?, category: 'Config');
     } catch (e) {
       LogService.instance.error('连接配置加载失败: $e', category: 'Config');
-      _isLoaded = true; // 即使失败也标记为已加载
+      _isLoaded = true; // 即使失败也标记为已加�?
     }
   }
 
-  // 确保配置已加载
+  // 确保配置已加�?
   Future<void> ensureLoaded() async {
     if (!_isLoaded) {
       await _loadConfigs();
     }
   }
 
-  // 保存连接配置到本地存储
+  // 保存连接配置到本地存�?
   Future<void> _saveConfigs() async {
     final prefs = await SharedPreferences.getInstance();
     final configsJson = state
@@ -120,7 +120,7 @@ class ConnectionConfigNotifier extends StateNotifier<List<ConnectionConfig>> {
     await _saveConfigs();
   }
 
-  // 更新最后连接时间
+  // 更新最后连接时�?
   Future<void> updateLastConnected(String configId) async {
     try {
       final updatedConfig = state.firstWhere((config) => config.id == configId);
@@ -128,14 +128,14 @@ class ConnectionConfigNotifier extends StateNotifier<List<ConnectionConfig>> {
       await updateConfig(newConfig);
     } catch (e) {
       // 配置不存在时（比如通过设备发现临时连接），忽略更新操作
-      // 这是正常情况，不需要记录错误
+      // 这是正常情况，不需要记录错�?
     }
   }
 
-  // 更新连接时间或添加新配置（解决设备发现连接的BadStateNoElement问题）
+  // 更新连接时间或添加新配置（解决设备发现连接的BadStateNoElement问题�?
   Future<void> updateOrAddConfig(ConnectionConfig config) async {
     try {
-      // 尝试找到现有配置并更新时间
+      // 尝试找到现有配置并更新时�?
       final existingConfig = state.firstWhere((c) => c.id == config.id);
       final updatedConfig = existingConfig.copyWith(lastConnected: DateTime.now());
       await updateConfig(updatedConfig);
@@ -148,7 +148,7 @@ class ConnectionConfigNotifier extends StateNotifier<List<ConnectionConfig>> {
   // 获取最近连接的配置（用于自动重连）
   ConnectionConfig? getRecentConnection() {
     if (state.isEmpty) return null;
-    // 配置已按最后连接时间排序，返回第一个
+    // 配置已按最后连接时间排序，返回第一�?
     return state.first;
   }
 }
@@ -160,7 +160,7 @@ final connectionConfigProvider = StateNotifierProvider<ConnectionConfigNotifier,
 // 当前连接配置Provider
 final currentConnectionProvider = StateProvider<ConnectionConfig?>((ref) => null);
 
-// 音量状态提供者
+// 音量状态提供�?
 final volumeStateProvider =
     StateNotifierProvider<VolumeStateNotifier, VolumeState>((ref) {
   return VolumeStateNotifier(ref); // Pass the Ref object directly
@@ -171,7 +171,7 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
   final Ref _ref; // Store the Ref object
   StreamSubscription? _messageSubscription;
   StreamSubscription<ConnectionStatus>? _connectionStatusSubscription; // Typed StreamSubscription
-  ConnectionStatus? _lastConnectionStatus; // 记录上一次的连接状态
+  ConnectionStatus? _lastConnectionStatus; // 记录上一次的连接状�?
 
   VolumeStateNotifier(this._ref) : super(VolumeState(volume: null, isMuted: false)) {
     _subscribeToMessages();
@@ -182,17 +182,17 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
     // 直接监听SocketService的状态流
     final socketService = _ref.read(socketServiceProvider);
     _connectionStatusSubscription = socketService.statusStream.listen((status) {
-      // 只在从非连接状态变为连接状态时请求音量状态
+      // 只在从非连接状态变为连接状态时请求音量状�?
       if (status == ConnectionStatus.connected && _lastConnectionStatus != ConnectionStatus.connected) {
         // 延迟500ms再请求音量状态，确保连接完全建立
         Future.delayed(const Duration(milliseconds: 500), () {
           _requestVolumeStatus();
         });
       }
-      // 连接断开时重置音量状态为未知状态
+      // 连接断开时重置音量状态为未知状�?
       if (status == ConnectionStatus.disconnected) {
         if (mounted) {
-          state = VolumeState(volume: null, isMuted: false); // 🔧 修复：重置为null，表示未知状态
+          state = VolumeState(volume: null, isMuted: false); // 🔧 修复：重置为null，表示未知状�?
         }
       }
       _lastConnectionStatus = status;
@@ -212,7 +212,7 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
   void _handleVolumeStatusMessage(ControlMessage message) {
     // LogService.instance.debug('Handling volume_status message: ${message.payload}', category: 'VolumeState'); // Kept commented
     try {
-      // 确保从消息中获取到有效的音量值
+      // 确保从消息中获取到有效的音量�?
       if (message.payload['volume'] != null) {
         final newVolume = (message.payload['volume'] as num).toDouble();
         final newMuteState = message.payload['muted'] as bool? ?? false;
@@ -239,7 +239,7 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
       await socketService.sendMessage(requestMessage);
       // LogService.instance.debug('Requested volume status from server', category: 'VolumeState');
     } else {
-      // 未连接时保持未知状态
+      // 未连接时保持未知状�?
       if (mounted) {
         state = VolumeState(volume: null, isMuted: false);
       }
@@ -288,7 +288,7 @@ class ConnectionManagerNotifier extends StateNotifier<AsyncValue<bool>> {
         // 更新当前连接配置
         ref.read(currentConnectionProvider.notifier).state = config;
         
-        // 尝试更新最后连接时间，如果配置不存在（比如设备发现连接），则自动添加
+        // 尝试更新最后连接时间，如果配置不存在（比如设备发现连接），则自动添�?
         final configNotifier = ref.read(connectionConfigProvider.notifier);
         await configNotifier.updateOrAddConfig(config);
         

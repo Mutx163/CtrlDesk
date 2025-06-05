@@ -21,7 +21,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     final connectionStatus = ref.watch(connectionStatusProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景色
+      backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景�?
       body: connectionStatus == ConnectionStatus.connected
           ? _buildToolsCollection(context)
           : _buildNotConnectedView(),
@@ -32,7 +32,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   Widget _buildToolsCollection(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        // 工具箱头部
+        // 工具箱头�?
         SliverToBoxAdapter(
           child: _buildToolsHeader(context),
         ),
@@ -65,7 +65,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     );
   }
 
-  /// 工具箱头部
+  /// 工具箱头�?
   Widget _buildToolsHeader(BuildContext context) {
     final currentConnection = ref.watch(currentConnectionProvider);
     
@@ -77,23 +77,23 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFFF9800).withOpacity(0.1),
-            const Color(0xFFF57C00).withOpacity(0.05),
+            const Color(0xFFFF9800).withValues(alpha: 0.1),
+            const Color(0xFFF57C00).withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFFF9800).withOpacity(0.2),
+          color: const Color(0xFFFF9800).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          // 工具箱图标
+          // 工具箱图�?
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF9800).withOpacity(0.1),
+              color: const Color(0xFFFF9800).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -104,7 +104,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
           ),
           const SizedBox(width: 16),
           
-          // 标题和描述
+          // 标题和描�?
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,7 +131,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                     Text(
                       currentConnection?.name ?? 'Windows PC',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -153,12 +153,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFFF9800).withOpacity(0.2),
+          color: const Color(0xFFFF9800).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF9800).withOpacity(0.1),
+            color: const Color(0xFFFF9800).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -209,7 +209,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                 () => _takeScreenshot('region'),
               ),
               _buildScreenshotButton(
-                '延迟3秒',
+                '延迟3�?,
                 Icons.timer_3_rounded,
                 () => _takeScreenshot('delayed'),
               ),
@@ -229,12 +229,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF795548).withOpacity(0.2),
+          color: const Color(0xFF795548).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF795548).withOpacity(0.1),
+            color: const Color(0xFF795548).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -309,12 +309,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withOpacity(0.2),
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4CAF50).withOpacity(0.1),
+            color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -374,12 +374,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF00BCD4).withOpacity(0.2),
+          color: const Color(0xFF00BCD4).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00BCD4).withOpacity(0.1),
+            color: const Color(0xFF00BCD4).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -409,7 +409,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
           if (currentConnection != null) ...[
             _buildConnectionInfoRow('设备名称', currentConnection.name),
             _buildConnectionInfoRow('IP地址', '${currentConnection.ipAddress}:${currentConnection.port}'),
-            _buildConnectionInfoRow('连接状态', '已连接 ✅'),
+            _buildConnectionInfoRow('连接状�?, '已连�?�?),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -430,10 +430,10 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     );
   }
 
-  /// 截图按钮构建器
+  /// 截图按钮构建�?
   Widget _buildScreenshotButton(String label, IconData icon, VoidCallback onPressed) {
     return Material(
-      color: const Color(0xFFFF5722).withOpacity(0.1),
+      color: const Color(0xFFFF5722).withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: _isScreenshotLoading ? null : onPressed,
@@ -467,10 +467,10 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     );
   }
 
-  /// 系统控制按钮构建器
+  /// 系统控制按钮构建�?
   Widget _buildSystemControlButton(String label, IconData icon, Color color, VoidCallback onPressed) {
     return Material(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onPressed,
@@ -504,13 +504,13 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     );
   }
 
-  /// 系统状态卡片
+  /// 系统状态卡�?
   Widget _buildSystemStatusCard() {
     // 这里应该从实际的监控数据provider获取数据
     // 暂时使用模拟数据
     return Column(
       children: [
-        _buildStatusRow('CPU使用率', '45%', Colors.green, 0.45),
+        _buildStatusRow('CPU使用�?, '45%', Colors.green, 0.45),
         _buildStatusRow('内存使用', '8.2/16GB', Colors.orange, 0.51),
         _buildStatusRow('磁盘活动', '正常', Colors.green, null),
         _buildStatusRow('网络速度', '50 Mbps', Colors.green, null),
@@ -518,7 +518,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     );
   }
 
-  /// 状态行构建器
+  /// 状态行构建�?
   Widget _buildStatusRow(String label, String value, Color color, double? progress) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -545,7 +545,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
               flex: 2,
               child: LinearProgressIndicator(
                 value: progress,
-                backgroundColor: color.withOpacity(0.2),
+                backgroundColor: color.withValues(alpha: 0.2),
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
             ),
@@ -575,7 +575,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -608,13 +608,13 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFFFF9800).withOpacity(0.1),
-                    const Color(0xFFF57C00).withOpacity(0.05),
+                    const Color(0xFFFF9800).withValues(alpha: 0.1),
+                    const Color(0xFFF57C00).withValues(alpha: 0.05),
                   ],
                 ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFFFF9800).withOpacity(0.2),
+                  color: const Color(0xFFFF9800).withValues(alpha: 0.2),
                   width: 2,
                 ),
               ),
@@ -638,7 +638,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             Text(
               '需要连接PC设备才能使用',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -646,7 +646,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             Text(
               '连接后即可使用截图、控制和监控工具',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -657,10 +657,10 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9800).withOpacity(0.05),
+                color: const Color(0xFFFF9800).withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFFF9800).withOpacity(0.2),
+                  color: const Color(0xFFFF9800).withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -708,7 +708,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     );
   }
 
-  /// 工具功能项展示
+  /// 工具功能项展�?
   Widget _buildToolsFeature(IconData icon, String label) {
     return Column(
       children: [
@@ -758,13 +758,13 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('截图指令发送失败: $e'),
+            content: Text('截图指令发送失�? $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
     } finally {
-      // 确保在组件未销毁时才更新状态
+      // 确保在组件未销毁时才更新状�?
       if (mounted) {
         setState(() {
           _isScreenshotLoading = false;
@@ -796,7 +796,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('已发送${actionMap[action]}指令'),
+            content: Text('已发�?{actionMap[action]}指令'),
             backgroundColor: const Color(0xFF795548),
           ),
         );
@@ -805,7 +805,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${actionMap[action]}指令发送失败: $e'),
+            content: Text('${actionMap[action]}指令发送失�? $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -824,13 +824,13 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     );
   }
 
-  /// 确认对话框
+  /// 确认对话�?
   void _showConfirmDialog(String action, VoidCallback onConfirm) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('确认$action'),
-        content: Text('您确定要$action吗？此操作无法撤销。'),
+        content: Text('您确定要$action吗？此操作无法撤销�?),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

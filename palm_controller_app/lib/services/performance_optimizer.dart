@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
 
-/// 性能优化器 - 基于WebRTC和现成Flutter解决方案的最佳实践
+/// 性能优化�?- 基于WebRTC和现成Flutter解决方案的最佳实�?
 class PerformanceOptimizer {
   static final PerformanceOptimizer _instance = PerformanceOptimizer._internal();
   factory PerformanceOptimizer() => _instance;
@@ -12,14 +12,14 @@ class PerformanceOptimizer {
   Timer? _mouseBatchTimer;
   final Queue<MouseMoveEvent> _mouseMoveQueue = Queue<MouseMoveEvent>();
   
-  // 性能优化配置 - 基于WebRTC低延迟优化
+  // 性能优化配置 - 基于WebRTC低延迟优�?
   static const int kOptimalFrameRate = 60; // 60fps
-  static const int kBatchIntervalMs = 16; // 1000/60 ≈ 16ms
-  static const int kMaxBatchSize = 8; // 最大批量大小
+  static const int kBatchIntervalMs = 16; // 1000/60 �?16ms
+  static const int kMaxBatchSize = 8; // 最大批量大�?
   static const int kDebounceDelayMs = 4; // 超低延迟防抖
   static const double kSmoothingFactor = 0.7; // 平滑因子
   
-  // 预测性缓存
+  // 预测性缓�?
   final Map<String, dynamic> _performanceCache = {};
   Timer? _cacheCleanupTimer;
   
@@ -43,7 +43,7 @@ class PerformanceOptimizer {
     _latencyHistory.clear();
   }
 
-  /// 启动批量处理 - 基于SyncPad项目的优化策略
+  /// 启动批量处理 - 基于SyncPad项目的优化策�?
   void _startBatchProcessing() {
     _mouseBatchTimer = Timer.periodic(
       const Duration(milliseconds: kBatchIntervalMs),
@@ -51,7 +51,7 @@ class PerformanceOptimizer {
     );
   }
 
-  /// 批量处理鼠标移动 - 合并和优化
+  /// 批量处理鼠标移动 - 合并和优�?
   void _processBatchedMouseMoves() {
     if (_mouseMoveQueue.isEmpty) return;
     
@@ -75,7 +75,7 @@ class PerformanceOptimizer {
       final smoothedDeltaX = _applySmoothingFilter(totalDeltaX);
       final smoothedDeltaY = _applySmoothingFilter(totalDeltaY);
       
-      // 发送优化后的移动事件
+      // 发送优化后的移动事�?
       _mouseMoveCallback?.call(smoothedDeltaX, smoothedDeltaY);
       
       // 记录性能指标
@@ -86,7 +86,7 @@ class PerformanceOptimizer {
     _performanceStopwatch.reset();
   }
 
-  /// 添加鼠标移动事件到批量队列
+  /// 添加鼠标移动事件到批量队�?
   void addMouseMove(double deltaX, double deltaY) {
     // 过滤微小移动 - 减少不必要的处理
     if (deltaX.abs() < 0.5 && deltaY.abs() < 0.5) return;
@@ -105,7 +105,7 @@ class PerformanceOptimizer {
     }
   }
 
-  /// 平滑过滤器 - 基于dyn_mouse_scroll包的算法
+  /// 平滑过滤�?- 基于dyn_mouse_scroll包的算法
   double _applySmoothingFilter(double value) {
     final cacheKey = 'smooth_${value.hashCode}';
     final lastValue = _performanceCache[cacheKey] as double? ?? 0.0;
@@ -174,7 +174,7 @@ class PerformanceOptimizer {
     );
   }
 
-  /// 自适应性能调整 - 基于当前性能动态调整参数
+  /// 自适应性能调整 - 基于当前性能动态调整参�?
   void adaptPerformance() {
     final stats = getPerformanceStats();
     
@@ -183,14 +183,14 @@ class PerformanceOptimizer {
       if (kMaxBatchSize > 4) {
         // 可以添加动态调整逻辑
         if (kDebugMode) {
-          print('PerformanceOptimizer: 检测到高延迟(${stats.averageLatency.toStringAsFixed(2)}ms)，建议优化网络连接');
+          print('PerformanceOptimizer: 检测到高延�?${stats.averageLatency.toStringAsFixed(2)}ms)，建议优化网络连�?);
         }
       }
     }
   }
 }
 
-/// 鼠标移动事件数据类
+/// 鼠标移动事件数据�?
 class MouseMoveEvent {
   final double deltaX;
   final double deltaY;
@@ -203,7 +203,7 @@ class MouseMoveEvent {
   });
 }
 
-/// 性能统计数据类
+/// 性能统计数据�?
 class PerformanceStats {
   final double averageLatency;
   final double maxLatency;

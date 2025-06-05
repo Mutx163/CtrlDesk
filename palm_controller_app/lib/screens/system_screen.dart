@@ -55,13 +55,13 @@ class SystemScreen extends ConsumerWidget {
                 context: context,
                 ref: ref,
                 title: '睡眠',
-                subtitle: '让PC进入睡眠状态',
+                subtitle: '让PC进入睡眠状�?,
                 icon: Icons.bedtime,
                 iconColor: Colors.blue,
                 action: 'sleep',
                 requireConfirm: true,
                 confirmTitle: '确认睡眠',
-                confirmMessage: '确定要让PC进入睡眠状态吗？',
+                confirmMessage: '确定要让PC进入睡眠状态吗�?,
               ),
               const SizedBox(height: 12),
               _buildSystemButton(
@@ -74,7 +74,7 @@ class SystemScreen extends ConsumerWidget {
                 action: 'restart',
                 requireConfirm: true,
                 confirmTitle: '确认重启',
-                confirmMessage: '确定要重启PC吗？请确保已保存所有工作。',
+                confirmMessage: '确定要重启PC吗？请确保已保存所有工作�?,
               ),
               const SizedBox(height: 12),
               _buildSystemButton(
@@ -87,7 +87,7 @@ class SystemScreen extends ConsumerWidget {
                 action: 'shutdown',
                 requireConfirm: true,
                 confirmTitle: '确认关机',
-                confirmMessage: '确定要关闭PC吗？请确保已保存所有工作。',
+                confirmMessage: '确定要关闭PC吗？请确保已保存所有工作�?,
               ),
             ],
           ),
@@ -107,8 +107,8 @@ class SystemScreen extends ConsumerWidget {
                     child: _buildSystemButton(
                       context: context,
                       ref: ref,
-                      title: '上一页',
-                      subtitle: 'PPT上一页',
+                      title: '上一�?,
+                      subtitle: 'PPT上一�?,
                       icon: Icons.navigate_before,
                       iconColor: Colors.blue,
                       action: 'ppt_previous',
@@ -121,8 +121,8 @@ class SystemScreen extends ConsumerWidget {
                     child: _buildSystemButton(
                       context: context,
                       ref: ref,
-                      title: '下一页',
-                      subtitle: 'PPT下一页',
+                      title: '下一�?,
+                      subtitle: 'PPT下一�?,
                       icon: Icons.navigate_next,
                       iconColor: Colors.blue,
                       action: 'ppt_next',
@@ -136,7 +136,7 @@ class SystemScreen extends ConsumerWidget {
               _buildSystemButton(
                 context: context,
                 ref: ref,
-                title: '开始放映',
+                title: '开始放�?,
                 subtitle: '按F5开始幻灯片放映',
                 icon: Icons.play_arrow,
                 iconColor: Colors.green,
@@ -147,7 +147,7 @@ class SystemScreen extends ConsumerWidget {
               _buildSystemButton(
                 context: context,
                 ref: ref,
-                title: '退出放映',
+                title: '退出放�?,
                 subtitle: '按Esc退出幻灯片放映',
                 icon: Icons.stop,
                 iconColor: Colors.red,
@@ -167,8 +167,8 @@ class SystemScreen extends ConsumerWidget {
             iconColor: Colors.purple,
             children: [
               _buildInfoTile(
-                title: '连接状态',
-                value: '已连接',
+                title: '连接状�?,
+                value: '已连�?,
                 icon: Icons.wifi,
                 valueColor: Colors.green,
               ),
@@ -207,13 +207,13 @@ class SystemScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              '未连接',
+              '未连�?,
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              '请先连接到PC端才能使用系统控制功能',
+              '请先连接到PC端才能使用系统控制功�?,
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 16,
@@ -363,8 +363,7 @@ class SystemScreen extends ConsumerWidget {
     String? confirmTitle,
     String? confirmMessage,
   }) async {
-    // 如果需要确认，显示确认对话框
-    if (requireConfirm) {
+    // 如果需要确认，显示确认对话�?    if (requireConfirm) {
       final confirmed = await _showConfirmDialog(
         context: context,
         title: confirmTitle ?? '确认操作',
@@ -441,23 +440,23 @@ class SystemScreen extends ConsumerWidget {
   String _getActionSuccessMessage(String action) {
     switch (action) {
       case 'lock':
-        return '已发送锁定屏幕指令';
+        return '已发送锁定屏幕指�?;
       case 'sleep':
-        return '已发送睡眠指令';
+        return '已发送睡眠指�?;
       case 'restart':
-        return '已发送重启指令';
+        return '已发送重启指�?;
       case 'shutdown':
-        return '已发送关机指令';
+        return '已发送关机指�?;
       case 'ppt_next':
-        return '已切换到下一页';
+        return '已切换到下一�?;
       case 'ppt_previous':
-        return '已切换到上一页';
+        return '已切换到上一�?;
       case 'presentation_start':
-        return '已发送开始放映指令';
+        return '已发送开始放映指�?;
       case 'presentation_end':
-        return '已发送退出放映指令';
+        return '已发送退出放映指�?;
       default:
-        return '指令已发送';
+        return '指令已发�?;
     }
   }
 } 

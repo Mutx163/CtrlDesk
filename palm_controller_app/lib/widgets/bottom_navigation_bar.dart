@@ -27,13 +27,13 @@ class BottomNavigationBarWidget extends ConsumerWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         border: Border(
           top: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -52,7 +52,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
     );
   }
 
-  /// 已连接状态：4栏导航 (媒体、触摸、键盘、工具)
+  /// 已连接状态：4栏导�?(媒体、触摸、键盘、工�?
   Widget _buildConnectedNavigation(BuildContext context, WidgetRef ref, int currentIndex) {
     final navItems = [
       _NavItem(
@@ -104,7 +104,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
     );
   }
 
-  /// 未连接状态：2栏导航 (连接、设置)
+  /// 未连接状态：2栏导�?(连接、设�?
   Widget _buildDisconnectedNavigation(BuildContext context, WidgetRef ref, int currentIndex) {
     final connectionStatus = ref.watch(connectionStatusProvider);
     
@@ -116,10 +116,10 @@ class BottomNavigationBarWidget extends ConsumerWidget {
         activeIcon: connectionStatus == ConnectionStatus.connecting
             ? Icons.wifi_find_rounded
             : Icons.wifi_outlined,
-        label: connectionStatus == ConnectionStatus.connecting ? '连接中' : '智能连接',
+        label: connectionStatus == ConnectionStatus.connecting ? '连接�? : '智能连接',
         route: '/connect',
         color: connectionStatus == ConnectionStatus.connecting 
-            ? const Color(0xFFFF9800) // 连接中-橙色
+            ? const Color(0xFFFF9800) // 连接�?橙色
             : const Color(0xFF4CAF50), // 连接-绿色
         hasIndicator: connectionStatus == ConnectionStatus.connecting,
       ),
@@ -151,7 +151,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
     );
   }
 
-     /// 构建导航项组件
+     /// 构建导航项组�?
    Widget _buildNavItemWidget(
      BuildContext context,
      WidgetRef ref,
@@ -166,7 +166,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
            // 尝试使用PageController进行滑动切换
            final pageController = ref.read(pageControllerProvider);
            if (pageController != null) {
-             // 使用路由到页面索引的映射，而不是导航数组索引
+             // 使用路由到页面索引的映射，而不是导航数组索�?
              final pageIndex = _routeToPageIndex(item.route);
              pageController.animateToPage(
                pageIndex,
@@ -199,7 +199,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected 
-                ? item.color.withOpacity(0.12)
+                ? item.color.withValues(alpha: 0.12)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
           ),
@@ -217,7 +217,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
                       size: isSelected ? 28 : 24,
                       color: isSelected 
                           ? item.color
-                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -229,7 +229,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected 
                           ? item.color
-                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                     child: Text(
                       item.label,
@@ -240,7 +240,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
                 ],
               ),
               
-              // 状态指示器 (连接中动画)
+              // 状态指示器 (连接中动�?
               if (item.hasIndicator)
                 Positioned(
                   right: 8,
@@ -254,16 +254,16 @@ class BottomNavigationBarWidget extends ConsumerWidget {
     );
   }
 
-  /// 构建脉冲指示器 (连接中状态)
+  /// 构建脉冲指示�?(连接中状�?
   Widget _buildPulsingIndicator(Color color) {
     return _PulsingDot(color: color);
   }
 
-  /// 将路由转换为实际的页面索引
+  /// 将路由转换为实际的页面索�?
   int _routeToPageIndex(String route) {
-    // 这个映射应该与MainScaffold中的_getPagesForConnectionStatus保持一致
+    // 这个映射应该与MainScaffold中的_getPagesForConnectionStatus保持一�?
     const routeToPageIndexMap = {
-      // 连接状态下的页面映射
+      // 连接状态下的页面映�?
       '/control': 0,       // ControlScreen
       '/touchpad': 1,      // TouchpadScreen  
       '/keyboard': 2,      // KeyboardScreen
@@ -271,7 +271,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
       '/monitor': 4,       // MonitorScreen
       '/tools': 5,         // ToolsScreen
       
-      // 未连接状态下的页面映射
+      // 未连接状态下的页面映�?
       '/connect': 0,       // ConnectScreen
       '/settings': 1,      // SettingsScreen
     };
@@ -329,7 +329,7 @@ class _PulsingDotState extends State<_PulsingDot>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: widget.color.withOpacity(0.4),
+                  color: widget.color.withValues(alpha: 0.4),
                   blurRadius: 4 * _animation.value,
                   spreadRadius: 2 * _animation.value,
                 ),
@@ -342,7 +342,7 @@ class _PulsingDotState extends State<_PulsingDot>
   }
 }
 
-/// 导航项数据模型
+/// 导航项数据模�?
 class _NavItem {
   const _NavItem({
     required this.icon,

@@ -16,20 +16,20 @@ void main() {
   test('应用组件创建测试', () {
     // 测试ProviderScope可以正常创建
     expect(() => const ProviderScope(child: PalmControllerApp()), returnsNormally);
-    print('✅ 应用组件创建测试通过');
+    // ✅ 应用组件创建测试通过
   });
   
   test('应用模型单元测试', () {
     // 简单的模型测试，不涉及UI
     expect(true, isTrue); // 基本的健康检查
-    print('✅ 基础单元测试通过');
+    // ✅ 基础单元测试通过
   });
   
   // 如果在CI环境，跳过复杂的UI测试
   testWidgets('PalmController app widget test', (WidgetTester tester) async {
     const skipUiTests = bool.fromEnvironment('SKIP_UI_TESTS', defaultValue: false);
     if (skipUiTests) {
-      print('⏭️ 跳过UI测试（CI环境）');
+      // ⏭️ 跳过UI测试（CI环境）
       return;
     }
     
@@ -48,10 +48,10 @@ void main() {
       expect(find.byType(MaterialApp), findsOneWidget);
       expect(find.text('Test App'), findsOneWidget);
       
-      print('✅ UI基础测试通过');
+      // ✅ UI基础测试通过
       
     } catch (e) {
-      print('⚠️ UI测试警告: $e (但不影响构建)');
+      // ⚠️ UI测试警告: $e (但不影响构建)
     }
   });
 }

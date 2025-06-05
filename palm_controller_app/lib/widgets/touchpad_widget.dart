@@ -13,12 +13,11 @@ class TouchpadWidget extends ConsumerStatefulWidget {
 }
 
 class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
-  // 防抖定时器
-  Timer? _mouseMoveDebounce;
+  // 防抖定时�?  Timer? _mouseMoveDebounce;
   
   // 事件节流
   DateTime _lastMouseSendTime = DateTime.now();
-  static const int _mouseThrottleMs = 16; // 约60fps
+  static const int _mouseThrottleMs = 16; // �?0fps
   
   bool _isDragging = false;
   double _lastPanDeltaX = 0;
@@ -35,20 +34,17 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     super.dispose();
   }
 
-  // Socket 通信方法 - 带节流的发送
-  void _sendMouseMove(double deltaX, double deltaY) {
+  // Socket 通信方法 - 带节流的发�?  void _sendMouseMove(double deltaX, double deltaY) {
     final now = DateTime.now();
     final timeDiff = now.difference(_lastMouseSendTime).inMilliseconds;
     
-    // 节流：限制发送频率
-    if (timeDiff < _mouseThrottleMs) {
+    // 节流：限制发送频�?    if (timeDiff < _mouseThrottleMs) {
       return;
     }
     
     _lastMouseSendTime = now;
     
-    // 发送鼠标移动指令
-    final socketService = ref.read(socketServiceProvider);
+    // 发送鼠标移动指�?    final socketService = ref.read(socketServiceProvider);
     socketService.sendMouseControl(
       action: 'move',
       deltaX: deltaX,
@@ -103,12 +99,12 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -116,10 +112,9 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
       ),
       child: Column(
         children: [
-          // 精简的顶部控制栏 - 人因工程学：最小化非主要功能占用空间
-          _buildCompactHeader(context, settings),
+          // 精简的顶部控制栏 - 人因工程学：最小化非主要功能占用空�?          _buildCompactHeader(context, settings),
           
-          // 主触摸板区域 - 最大化设计 (占用约85%的空间)
+          // 主触摸板区域 - 最大化设计 (占用�?5%的空�?
           Expanded(
             flex: 85, 
             child: _buildMaximizedTouchpadArea(context, settings),
@@ -135,10 +130,10 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
   /// 精简的顶部控制栏 - 人因工程学：减少垂直空间占用
   Widget _buildCompactHeader(BuildContext context, AppSettings settings) {
     return Container(
-      height: 48, // 大幅减少高度，从原来的约80px减少到48px
+      height: 48, // 大幅减少高度，从原来的约80px减少�?8px
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -146,8 +141,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
       ),
       child: Row(
         children: [
-          // 触摸板图标 - 小型化
-          Icon(
+          // 触摸板图�?- 小型�?          Icon(
             Icons.touch_app_rounded,
             color: Theme.of(context).colorScheme.primary,
             size: 16,
@@ -157,7 +151,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
           // 标题和灵敏度信息 - 单行显示
           Expanded(
             child: Text(
-              '触摸板 · 灵敏度 ${(settings.mouseSensitivity * 100).round()}%',
+              '触摸�?· 灵敏�?${(settings.mouseSensitivity * 100).round()}%',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.primary,
@@ -174,7 +168,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
               size: 16,
               color: Theme.of(context).colorScheme.primary,
             ),
-            tooltip: '调节灵敏度',
+            tooltip: '调节灵敏�?,
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -184,15 +178,15 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     );
   }
 
-  /// 最大化触摸板区域 - 人因工程学核心：触摸区域优先
+  /// 最大化触摸板区�?- 人因工程学核心：触摸区域优先
   Widget _buildMaximizedTouchpadArea(BuildContext context, AppSettings settings) {
     return Container(
       margin: const EdgeInsets.all(8), // 减少边距，最大化触摸区域
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.02),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -209,13 +203,13 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
           height: double.infinity,
           child: Stack(
             children: [
-              // 边缘引导线 - 增强边界感知
+              // 边缘引导�?- 增强边界感知
               Positioned.fill(
                 child: Container(
                   margin: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(8),
@@ -223,19 +217,18 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                 ),
               ),
               
-              // 中心指示器 - 优化尺寸和位置
-              Center(
+              // 中心指示�?- 优化尺寸和位�?              Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                    color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+                        color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -247,7 +240,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                       Icon(
                         Icons.mouse_rounded,
                         size: 20,
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 8),
                       Column(
@@ -263,7 +256,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                           Text(
                             '单击·双击·长按',
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -281,7 +274,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                   width: 3,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -293,7 +286,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                   width: 3,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -305,7 +298,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                   width: 3,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -317,7 +310,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                   width: 3,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(1.5),
                   ),
                 ),
@@ -332,10 +325,9 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
   /// 紧凑型底部按钮栏 - 人因工程学：44dp最小触摸目标，合理布局
   Widget _buildCompactButtonBar(BuildContext context, AppSettings settings) {
     return Container(
-      height: 64, // 固定高度，确保符合44dp最小触摸目标
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 64, // 固定高度，确保符�?4dp最小触摸目�?      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -343,8 +335,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
       ),
       child: Row(
         children: [
-          // 左键按钮 - 44dp最小触摸目标
-          Expanded(
+          // 左键按钮 - 44dp最小触摸目�?          Expanded(
             child: _buildTouchTargetButton(
               context,
               icon: Icons.mouse_rounded,
@@ -356,8 +347,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
           
           // 滚轮区域 - 紧凑设计
           SizedBox(
-            width: 72, // 减少宽度，给主按钮更多空间
-            child: Column(
+            width: 72, // 减少宽度，给主按钮更多空�?            child: Column(
               children: [
                 Expanded(
                   child: _buildScrollButton(
@@ -370,7 +360,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
                 Text(
                   '滚轮',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 10,
                   ),
                 ),
@@ -387,8 +377,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
           ),
           
           const SizedBox(width: 8),
-          // 右键按钮 - 44dp最小触摸目标
-          Expanded(
+          // 右键按钮 - 44dp最小触摸目�?          Expanded(
             child: _buildTouchTargetButton(
               context,
               icon: Icons.more_vert_rounded,
@@ -401,8 +390,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     );
   }
 
-  /// 符合44dp最小触摸目标的按钮 - 人因工程学标准
-  Widget _buildTouchTargetButton(
+  /// 符合44dp最小触摸目标的按钮 - 人因工程学标�?  Widget _buildTouchTargetButton(
     BuildContext context, {
     required IconData icon,
     required String label,
@@ -419,7 +407,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -446,8 +434,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     );
   }
 
-  /// 紧凑型滚轮按钮
-  Widget _buildScrollButton(
+  /// 紧凑型滚轮按�?  Widget _buildScrollButton(
     BuildContext context, {
     required IconData icon,
     required VoidCallback onPressed,
@@ -464,7 +451,7 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
             ),
           ),
           child: Icon(
@@ -532,13 +519,13 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('调节鼠标灵敏度'),
+        title: const Text('调节鼠标灵敏�?),
         content: StatefulBuilder(
           builder: (context, setState) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('当前灵敏度: ${(settings.mouseSensitivity * 100).round()}%'),
+                Text('当前灵敏�? ${(settings.mouseSensitivity * 100).round()}%'),
                 const SizedBox(height: 16),
                 Slider(
                   value: settings.mouseSensitivity,

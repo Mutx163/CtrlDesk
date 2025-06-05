@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/performance_optimizer.dart';
 
-/// 性能监控小部件 - 实时显示优化效果
+/// 性能监控小部�?- 实时显示优化效果
 class PerformanceMonitorWidget extends StatefulWidget {
   const PerformanceMonitorWidget({super.key});
 
@@ -77,7 +77,7 @@ class _PerformanceMonitorWidgetState extends State<PerformanceMonitorWidget> {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -113,8 +113,8 @@ class _PerformanceMonitorWidgetState extends State<PerformanceMonitorWidget> {
                   // 性能指标
                   if (_currentStats != null) ...[
                     _buildMetricRow('平均延迟', '${_currentStats!.averageLatency.toStringAsFixed(1)}ms', _getLatencyColor(_currentStats!.averageLatency)),
-                    _buildMetricRow('最大延迟', '${_currentStats!.maxLatency.toStringAsFixed(1)}ms', Colors.orange),
-                    _buildMetricRow('最小延迟', '${_currentStats!.minLatency.toStringAsFixed(1)}ms', Colors.green),
+                    _buildMetricRow('最大延�?, '${_currentStats!.maxLatency.toStringAsFixed(1)}ms', Colors.orange),
+                    _buildMetricRow('最小延�?, '${_currentStats!.minLatency.toStringAsFixed(1)}ms', Colors.green),
                     _buildMetricRow('帧率', '${_currentStats!.frameRate.toStringAsFixed(1)}fps', _getFrameRateColor(_currentStats!.frameRate)),
                   ] else ...[
                     const Text(

@@ -17,13 +17,11 @@ class ControlScreen extends ConsumerStatefulWidget {
 
 class _ControlScreenState extends ConsumerState<ControlScreen> {
   final TextEditingController _quickInputController = TextEditingController();
-  Timer? _volumeDebounceTimer; // 添加防抖计时器
-
+  Timer? _volumeDebounceTimer; // 添加防抖计时�?
   @override
   void initState() {
     super.initState();
-    // 🔧 界面加载时立即请求音量状态
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 🔧 界面加载时立即请求音量状�?    WidgetsBinding.instance.addPostFrameCallback((_) {
       final connectionStatus = ref.read(connectionStatusProvider);
       if (connectionStatus == ConnectionStatus.connected) {
         _requestVolumeStatus();
@@ -34,8 +32,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   @override
   void dispose() {
     _quickInputController.dispose();
-    _volumeDebounceTimer?.cancel(); // 清理计时器
-    super.dispose();
+    _volumeDebounceTimer?.cancel(); // 清理计时�?    super.dispose();
   }
 
   // 发送控制消息的通用方法
@@ -63,8 +60,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     _sendControlMessage(message);
   }
 
-  // 快捷键方法
-  void _sendShortcut(String keyCode, {List<String> modifiers = const []}) {
+  // 快捷键方�?  void _sendShortcut(String keyCode, {List<String> modifiers = const []}) {
     final message = ControlMessage.keyboardControl(
       messageId: DateTime.now().millisecondsSinceEpoch.toString(),
       action: 'key_press',
@@ -74,8 +70,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     _sendControlMessage(message);
   }
 
-  // 快速输入方法
-  void _sendQuickInput() {
+  // 快速输入方�?  void _sendQuickInput() {
     if (_quickInputController.text.isNotEmpty) {
       final message = ControlMessage.keyboardControl(
         messageId: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -103,10 +98,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     });
   }
 
-  // 请求音量状态 - 延迟版本
+  // 请求音量状�?- 延迟版本
   void _requestVolumeStatusDelayed() {
-    // 延迟请求状态，避免与本地状态更新冲突
-    Timer(const Duration(milliseconds: 500), () {
+    // 延迟请求状态，避免与本地状态更新冲�?    Timer(const Duration(milliseconds: 500), () {
       final message = ControlMessage.mediaControl(
         messageId: DateTime.now().millisecondsSinceEpoch.toString(),
         action: 'get_volume_status',
@@ -115,8 +109,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     });
   }
 
-  // 保留原有的立即请求方法，供其他地方使用
-  void _requestVolumeStatus() {
+  // 保留原有的立即请求方法，供其他地方使�?  void _requestVolumeStatus() {
     final message = ControlMessage.mediaControl(
       messageId: DateTime.now().millisecondsSinceEpoch.toString(),
       action: 'get_volume_status',
@@ -139,12 +132,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 媒体控制中心界面 - 优化的媒体控制体验
-  Widget _buildMediaControlCenter(BuildContext context, dynamic currentConnection) {
+  /// 媒体控制中心界面 - 优化的媒体控制体�?  Widget _buildMediaControlCenter(BuildContext context, dynamic currentConnection) {
     return CustomScrollView(
       slivers: [
-        // 顶部连接状态
-        SliverToBoxAdapter(
+        // 顶部连接状�?        SliverToBoxAdapter(
           child: _buildConnectionHeader(context, currentConnection),
         ),
         
@@ -163,13 +154,11 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           child: _buildVolumeControl(context),
         ),
         
-        // 快速操作面板
-        SliverToBoxAdapter(
+        // 快速操作面�?        SliverToBoxAdapter(
           child: _buildQuickActionsPanel(context),
         ),
         
-        // 系统状态概览
-        SliverToBoxAdapter(
+        // 系统状态概�?        SliverToBoxAdapter(
           child: _buildSystemStatusOverview(context),
         ),
         
@@ -181,8 +170,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 连接状态头部
-  Widget _buildConnectionHeader(BuildContext context, dynamic currentConnection) {
+  /// 连接状态头�?  Widget _buildConnectionHeader(BuildContext context, dynamic currentConnection) {
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(16),
@@ -191,13 +179,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFE91E63).withOpacity(0.1),
-            const Color(0xFFE91E63).withOpacity(0.05),
+            const Color(0xFFE91E63).withValues(alpha: 0.1),
+            const Color(0xFFE91E63).withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
+          color: const Color(0xFFE91E63).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -207,7 +195,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFE91E63).withOpacity(0.1),
+              color: const Color(0xFFE91E63).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -218,8 +206,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           ),
           const SizedBox(width: 16),
           
-          // 标题和连接信息
-          Expanded(
+          // 标题和连接信�?          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -245,7 +232,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                     Text(
                       currentConnection?.name ?? 'Windows PC',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -267,12 +254,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
+          color: const Color(0xFFE91E63).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
+            color: const Color(0xFFE91E63).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -285,7 +272,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: const Color(0xFFE91E63).withOpacity(0.1),
+              color: const Color(0xFFE91E63).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -304,12 +291,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                 Text(
                   '当前播放',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Windows 媒体播放器',
+                  'Windows 媒体播放�?,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -318,9 +305,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '准备播放音乐或视频',
+                  '准备播放音乐或视�?,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -342,12 +329,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
+          color: const Color(0xFFE91E63).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
+            color: const Color(0xFFE91E63).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -389,12 +376,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
+          color: const Color(0xFFE91E63).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
+            color: const Color(0xFFE91E63).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -408,7 +395,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           double volumeProgress;
 
           if (volumeState.volume == null) {
-            volumeText = '获取中...';
+            volumeText = '获取�?..';
             volumeProgress = 0.0;
           } else if (volumeState.isMuted) {
             volumeText = '静音';
@@ -463,7 +450,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                         activeTrackColor: volumeState.isMuted 
                             ? Colors.red 
                             : const Color(0xFFE91E63),
-                        inactiveTrackColor: const Color(0xFFE91E63).withOpacity(0.3),
+                        inactiveTrackColor: const Color(0xFFE91E63).withValues(alpha: 0.3),
                         thumbColor: volumeState.isMuted 
                             ? Colors.red 
                             : const Color(0xFFE91E63),
@@ -507,8 +494,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 快速操作面板
-  Widget _buildQuickActionsPanel(BuildContext context) {
+  /// 快速操作面�?  Widget _buildQuickActionsPanel(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -516,12 +502,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
+          color: const Color(0xFFE91E63).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
+            color: const Color(0xFFE91E63).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -539,7 +525,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '快速操作',
+                '快速操�?,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFFE91E63),
@@ -567,8 +553,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 系统状态概览
-  Widget _buildSystemStatusOverview(BuildContext context) {
+  /// 系统状态概�?  Widget _buildSystemStatusOverview(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -576,12 +561,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
+          color: const Color(0xFFE91E63).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
+            color: const Color(0xFFE91E63).withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -599,7 +584,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'PC状态',
+                'PC状�?,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFFE91E63),
@@ -640,10 +625,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -669,8 +654,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           ),
           const SizedBox(height: 16),
           
-          // 主要播放控制 - 大按钮设计
-          Row(
+          // 主要播放控制 - 大按钮设�?          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildMediaButton(
@@ -684,8 +668,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                 context,
                 icon: Icons.play_arrow_rounded,
                 onPressed: () => _sendMediaControl('play_pause'),
-                size: 64, // 最大按钮
-                isPrimary: true,
+                size: 64, // 最大按�?                isPrimary: true,
               ),
               const SizedBox(width: 20),
               _buildMediaButton(
@@ -708,9 +691,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
               // 🔧 修复：处理volume为null的情况（未知状态）
               if (volumeState.volume == null) {
-                volumeText = '获取中...';
-                volumeProgress = 0.0; // 显示为0，但不表示实际音量
-              } else if (volumeState.isMuted) {
+                volumeText = '获取�?..';
+                volumeProgress = 0.0; // 显示�?，但不表示实际音�?              } else if (volumeState.isMuted) {
                 volumeText = '静音';
                 volumeProgress = 0.0;
               } else {
@@ -724,8 +706,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                   // 音量滑块控制
                   Row(
                     children: [
-                      // 音量减按钮
-                      _buildMediaButton(
+                      // 音量减按�?                      _buildMediaButton(
                         context,
                         icon: Icons.volume_down_rounded,
                         onPressed: () => _sendMediaControl('volume_down'),
@@ -746,8 +727,8 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                                         ? Colors.red 
                                         : Theme.of(context).colorScheme.primary),
                                 inactiveTrackColor: volumeState.volume == null
-                                    ? Colors.grey.withOpacity(0.3)
-                                    : Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                    ? Colors.grey.withValues(alpha: 0.3)
+                                    : Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                                 thumbColor: volumeState.volume == null
                                     ? Colors.grey
                                     : (volumeState.isMuted 
@@ -761,12 +742,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                                 min: 0.0,
                                 max: 1.0,
                                 onChanged: volumeState.volume == null ? null : (value) {
-                                  // 🔧 修复：onChanged只更新本地状态，不发送网络请求
-                                  ref.read(volumeStateProvider.notifier).updateVolume(value);
+                                  // 🔧 修复：onChanged只更新本地状态，不发送网络请�?                                  ref.read(volumeStateProvider.notifier).updateVolume(value);
                                 },
                                 onChangeEnd: volumeState.volume == null ? null : (value) {
-                                  // 🔧 修复：onChangeEnd发送设置并延迟请求状态
-                                  _setSystemVolume(value);
+                                  // 🔧 修复：onChangeEnd发送设置并延迟请求状�?                                  _setSystemVolume(value);
                                   _requestVolumeStatusDelayed();
                                 },
                               ),
@@ -787,8 +766,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                       ),
                       
                       const SizedBox(width: 12),
-                      // 音量加按钮
-                      _buildMediaButton(
+                      // 音量加按�?                      _buildMediaButton(
                         context,
                         icon: Icons.volume_up_rounded,
                         onPressed: () => _sendMediaControl('volume_up'),
@@ -835,12 +813,12 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                 : Theme.of(context).colorScheme.surface,
             shape: BoxShape.circle,
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
               width: 2,
             ),
             boxShadow: isPrimary ? [
               BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -863,10 +841,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -948,7 +926,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -975,15 +953,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 常用快捷键区域
-  Widget _buildCommonShortcutsSection(BuildContext context) {
+  /// 常用快捷键区�?  Widget _buildCommonShortcutsSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.tertiaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -998,7 +975,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '常用快捷键',
+                '常用快捷�?,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: Theme.of(context).colorScheme.tertiary,
@@ -1008,8 +985,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           ),
           const SizedBox(height: 12),
           
-          // 快捷键按钮网格
-          GridView.count(
+          // 快捷键按钮网�?          GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 3,
@@ -1044,7 +1020,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               _buildShortcutButton(
                 context,
                 label: 'Backspace',
-                description: '退格',
+                description: '退�?,
                 onPressed: () => _sendShortcut('VK_BACK'),
               ),
               _buildShortcutButton(
@@ -1060,8 +1036,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 快捷键按钮
-  Widget _buildShortcutButton(
+  /// 快捷键按�?  Widget _buildShortcutButton(
     BuildContext context, {
     required String label,
     required String description,
@@ -1078,7 +1053,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -1096,7 +1071,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               Text(
                 description,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1107,15 +1082,14 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 快速输入区域
-  Widget _buildQuickInputSection(BuildContext context) {
+  /// 快速输入区�?  Widget _buildQuickInputSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -1130,7 +1104,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '快速输入',
+                '快速输�?,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -1139,14 +1113,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           ),
           const SizedBox(height: 12),
           
-          // 输入框和发送按钮
-          Row(
+          // 输入框和发送按�?          Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _quickInputController,
                   decoration: InputDecoration(
-                    hintText: '快速输入文本...',
+                    hintText: '快速输入文�?..',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1162,7 +1135,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
               FilledButton.icon(
                 onPressed: _sendQuickInput,
                 icon: const Icon(Icons.send_rounded, size: 18),
-                label: const Text('发送'),
+                label: const Text('发�?),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
@@ -1183,7 +1156,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -1194,7 +1167,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           ),
           const SizedBox(height: 32),
           Text(
-            '设备未连接',
+            '设备未连�?,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -1202,9 +1175,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            '请先连接到PC设备后使用控制功能',
+            '请先连接到PC设备后使用控制功�?,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -1222,8 +1195,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 构建快速操作按钮
-  Widget _buildQuickActionButton(
+  /// 构建快速操作按�?  Widget _buildQuickActionButton(
     String label,
     IconData icon,
     Color color,
@@ -1236,10 +1208,10 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -1284,7 +1256,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         Text(
           label,
           style: TextStyle(
-            color: color.withOpacity(0.7),
+            color: color.withValues(alpha: 0.7),
             fontSize: 10,
             fontWeight: FontWeight.w500,
           ),

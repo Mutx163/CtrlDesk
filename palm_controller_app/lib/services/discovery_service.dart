@@ -39,8 +39,7 @@ class DiscoveredDevice {
     );
   }
 
-  // 转换为连接配置
-  ConnectionConfig toConnectionConfig() {
+  // 转换为连接配�?  ConnectionConfig toConnectionConfig() {
     return ConnectionConfig(
       id: '${ipAddress}_${port}_${DateTime.now().millisecondsSinceEpoch}',
       name: '$hostName ($serviceName)',
@@ -91,11 +90,9 @@ class DiscoveryService {
   // 发现的设备流
   Stream<List<DiscoveredDevice>> get devicesStream => _devicesController.stream;
 
-  // 当前发现的设备列表
-  List<DiscoveredDevice> get discoveredDevices => _discoveredDevices.toList();
+  // 当前发现的设备列�?  List<DiscoveredDevice> get discoveredDevices => _discoveredDevices.toList();
 
-  // 检查是否有必要的权限
-  Future<bool> _checkAndRequestPermissions() async {
+  // 检查是否有必要的权�?  Future<bool> _checkAndRequestPermissions() async {
     if (_permissionCheckCompleted) {
       return _hasRequiredPermissions;
     }
@@ -103,25 +100,23 @@ class DiscoveryService {
     try {
       LogService.instance.info('开始检查UDP广播所需权限...', category: 'Discovery');
       
-      // 检查位置权限 (Android 6.0+需要位置权限进行UDP广播)
+      // 检查位置权�?(Android 6.0+需要位置权限进行UDP广播)
       var locationStatus = await Permission.locationWhenInUse.status;
-      LogService.instance.info('当前位置权限状态: $locationStatus', category: 'Discovery');
+      LogService.instance.info('当前位置权限状�? $locationStatus', category: 'Discovery');
       
       if (locationStatus == PermissionStatus.denied) {
-        LogService.instance.info('位置权限被拒绝，跳过自动权限请求（用户可在设置中手动授权）', category: 'Discovery');
-        // 不再自动请求权限，避免每次启动都弹出权限对话框
-        // 用户可以通过UI主动授权
+        LogService.instance.info('位置权限被拒绝，跳过自动权限请求（用户可在设置中手动授权�?, category: 'Discovery');
+        // 不再自动请求权限，避免每次启动都弹出权限对话�?        // 用户可以通过UI主动授权
       }
 
-      // 优化权限处理逻辑 - 更宽容的权限检查
-      if (locationStatus == PermissionStatus.granted) {
+      // 优化权限处理逻辑 - 更宽容的权限检�?      if (locationStatus == PermissionStatus.granted) {
         LogService.instance.info('位置权限已授予，UDP设备发现功能完全启用', category: 'Discovery');
         _hasRequiredPermissions = true;
       } else if (locationStatus == PermissionStatus.permanentlyDenied) {
         LogService.instance.warning('位置权限被永久拒绝，将尝试受限的发现功能', category: 'Discovery');
         _hasRequiredPermissions = false; // 仍然尝试，只是标记为受限
       } else {
-        LogService.instance.info('位置权限状态: $locationStatus，将尝试使用发现功能', category: 'Discovery');
+        LogService.instance.info('位置权限状�? $locationStatus，将尝试使用发现功能', category: 'Discovery');
         // 即使权限状态不明确，我们也尝试进行UDP广播
         // 很多设备即使没有明确授权也能进行局域网UDP广播
         _hasRequiredPermissions = true;
@@ -132,18 +127,16 @@ class DiscoveryService {
       LogService.instance.info('权限检查完成，将尝试启用UDP发现功能', category: 'Discovery');
       return true; // 总是返回true，让系统尝试启动发现功能
     } catch (e) {
-      LogService.instance.error('权限检查失败: $e，将尝试继续启动发现功能', category: 'Discovery');
+      LogService.instance.error('权限检查失�? $e，将尝试继续启动发现功能', category: 'Discovery');
       _hasRequiredPermissions = false;
       _permissionCheckCompleted = true;
-      return true; // 即使权限检查失败，也尝试启动发现功能
-    }
+      return true; // 即使权限检查失败，也尝试启动发现功�?    }
   }
 
   // 开始局域网设备发现
   Future<bool> startDiscovery() async {
     try {
-      // 检查权限
-      final hasPermissions = await _checkAndRequestPermissions();
+      // 检查权�?      final hasPermissions = await _checkAndRequestPermissions();
       if (!hasPermissions) {
         LogService.instance.warning('权限不足，设备发现功能受限，但将继续尝试', category: 'Discovery');
         // 即使权限不足，也尝试启动发现服务
@@ -155,7 +148,7 @@ class DiscoveryService {
       // 配置socket选项
       try {
         _socket!.broadcastEnabled = true;
-        LogService.instance.debug('UDP广播已启用', category: 'Discovery');
+        LogService.instance.debug('UDP广播已启�?, category: 'Discovery');
       } catch (e) {
         LogService.instance.warning('无法启用UDP广播: $e', category: 'Discovery');
       }
@@ -170,8 +163,7 @@ class DiscoveryService {
       // 启动清理任务
       _startCleanupTask();
 
-      // 立即进行一次发现
-      await _sendDiscoveryRequest();
+      // 立即进行一次发�?      await _sendDiscoveryRequest();
 
       return true;
     } catch (e) {
@@ -188,13 +180,11 @@ class DiscoveryService {
     _socket = null;
     _discoveredDevices.clear();
     _devicesController.add([]);
-    LogService.instance.info('设备发现服务已停止', category: 'Discovery');
+    LogService.instance.info('设备发现服务已停�?, category: 'Discovery');
   }
 
-  // 手动扫描一次
-  Future<List<DiscoveredDevice>> scanOnce({Duration timeout = scanTimeout}) async {
-    // 清空之前的设备列表
-    _discoveredDevices.clear();
+  // 手动扫描一�?  Future<List<DiscoveredDevice>> scanOnce({Duration timeout = scanTimeout}) async {
+    // 清空之前的设备列�?    _discoveredDevices.clear();
     
     final completer = Completer<List<DiscoveredDevice>>();
     RawDatagramSocket? scanSocket;
@@ -202,22 +192,21 @@ class DiscoveryService {
     // 设置超时
     Timer(timeout, () {
       if (!completer.isCompleted) {
-        LogService.instance.info('设备扫描超时，发现 ${_discoveredDevices.length} 个设备', category: 'Discovery');
+        LogService.instance.info('设备扫描超时，发�?${_discoveredDevices.length} 个设�?, category: 'Discovery');
         completer.complete(_discoveredDevices.toList());
       }
     });
 
     try {
-      LogService.instance.info('开始手动设备扫描，超时时间: ${timeout.inSeconds}秒', category: 'Discovery');
+      LogService.instance.info('开始手动设备扫描，超时时间: ${timeout.inSeconds}�?, category: 'Discovery');
       
-      // 检查权限（但不强制要求）
-      await _checkAndRequestPermissions();
+      // 检查权限（但不强制要求�?      await _checkAndRequestPermissions();
       
       // 为扫描创建临时socket
       scanSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
       scanSocket.broadcastEnabled = true;
       
-      LogService.instance.info('扫描socket创建成功，端口: ${scanSocket.port}', category: 'Discovery');
+      LogService.instance.info('扫描socket创建成功，端�? ${scanSocket.port}', category: 'Discovery');
       
       // 监听响应
       scanSocket.listen((RawSocketEvent event) {
@@ -241,8 +230,7 @@ class DiscoveryService {
                 _discoveredDevices.removeWhere((d) => d.ipAddress == device.ipAddress && d.port == device.port);
                 _discoveredDevices.add(device);
                 
-                // 通知监听者
-                _devicesController.add(_discoveredDevices.toList());
+                // 通知监听�?                _devicesController.add(_discoveredDevices.toList());
               }
             } catch (e) {
               LogService.instance.debug('解析发现响应失败: $e', category: 'Discovery');
@@ -251,14 +239,12 @@ class DiscoveryService {
         }
       });
       
-      // 发送发现请求
-      await _sendDiscoveryRequestWithSocket(scanSocket);
+      // 发送发现请�?      await _sendDiscoveryRequestWithSocket(scanSocket);
       
       // 等待指定时间收集响应
-      await Future.delayed(const Duration(milliseconds: 3000)); // 增加等待时间到3秒
-      
+      await Future.delayed(const Duration(milliseconds: 3000)); // 增加等待时间�?�?      
       if (!completer.isCompleted) {
-        LogService.instance.info('设备扫描完成，发现 ${_discoveredDevices.length} 个设备', category: 'Discovery');
+        LogService.instance.info('设备扫描完成，发�?${_discoveredDevices.length} 个设�?, category: 'Discovery');
         completer.complete(_discoveredDevices.toList());
       }
     } catch (e) {
@@ -274,8 +260,7 @@ class DiscoveryService {
     return completer.future;
   }
 
-  // 获取最佳设备（信号最强或最近发现的）
-  DiscoveredDevice? getBestDevice() {
+  // 获取最佳设备（信号最强或最近发现的�?  DiscoveredDevice? getBestDevice() {
     if (_discoveredDevices.isEmpty) return null;
     
     // 按发现时间排序，返回最近发现的
@@ -311,8 +296,7 @@ class DiscoveryService {
     });
   }
 
-  // 发送设备发现请求
-  Future<void> _sendDiscoveryRequest() async {
+  // 发送设备发现请�?  Future<void> _sendDiscoveryRequest() async {
     if (_socket == null) {
       LogService.instance.warning('UDP socket未就绪，跳过发现请求', category: 'Discovery');
       return;
@@ -321,20 +305,17 @@ class DiscoveryService {
     await _sendDiscoveryRequestWithSocket(_socket!);
   }
 
-  // 使用指定socket发送设备发现请求
-  Future<void> _sendDiscoveryRequestWithSocket(RawDatagramSocket socket) async {
+  // 使用指定socket发送设备发现请�?  Future<void> _sendDiscoveryRequestWithSocket(RawDatagramSocket socket) async {
     try {
-      // 发送广播请求
-      final message = "PALM_CONTROLLER_DISCOVERY";
+      // 发送广播请�?      final message = "PALM_CONTROLLER_DISCOVERY";
       final data = utf8.encode(message);
       
-      // 广播到所有可能的局域网段
-      final networkPrefixes = await _getNetworkPrefixes();
+      // 广播到所有可能的局域网�?      final networkPrefixes = await _getNetworkPrefixes();
       
       int successCount = 0;
       int failureCount = 0;
       
-      LogService.instance.info('开始UDP广播到 ${networkPrefixes.length} 个网段...', category: 'Discovery');
+      LogService.instance.info('开始UDP广播�?${networkPrefixes.length} 个网�?..', category: 'Discovery');
       
       for (final prefix in networkPrefixes) {
         await _sendToSpecificNetworkWithSocket(socket, prefix, data, (success) {
@@ -345,22 +326,21 @@ class DiscoveryService {
           }
         });
         
-        // 在网段之间添加小延迟，避免网络拥塞
-        await Future.delayed(const Duration(milliseconds: 50));
+        // 在网段之间添加小延迟，避免网络拥�?        await Future.delayed(const Duration(milliseconds: 50));
       }
       
-      LogService.instance.info('UDP广播完成: 成功 $successCount 个网段, 失败 $failureCount 个网段', category: 'Discovery');
+      LogService.instance.info('UDP广播完成: 成功 $successCount 个网�? 失败 $failureCount 个网�?, category: 'Discovery');
       
       if (successCount == 0 && failureCount > 0) {
         LogService.instance.warning('所有UDP广播都失败了，可能存在网络或权限问题', category: 'Discovery');
         // 不再直接禁用权限，而是继续尝试
       }
     } catch (e) {
-      LogService.instance.error('UDP广播发送失败: $e', category: 'Discovery');
+      LogService.instance.error('UDP广播发送失�? $e', category: 'Discovery');
       
       // 检查是否是权限错误
       if (e.toString().contains('Permission denied') || e.toString().contains('errno = 13')) {
-        LogService.instance.error('UDP权限被拒绝，设备发现功能将受限', category: 'Discovery');
+        LogService.instance.error('UDP权限被拒绝，设备发现功能将受�?, category: 'Discovery');
         _hasRequiredPermissions = false;
       }
     }
@@ -379,29 +359,26 @@ class DiscoveryService {
       final broadcastAddress = '$prefix.255';
       final address = InternetAddress(broadcastAddress);
       
-      // 尝试发送UDP广播，最多重试3次
-      for (int attempt = 1; attempt <= 3; attempt++) {
+      // 尝试发送UDP广播，最多重�?�?      for (int attempt = 1; attempt <= 3; attempt++) {
         try {
           final bytesSent = socket.send(data, address, discoveryPort);
           
           if (bytesSent > 0) {
-            LogService.instance.debug('UDP广播发送成功 (尝试 $attempt/3): $broadcastAddress:$discoveryPort ($bytesSent bytes)', category: 'Discovery');
+            LogService.instance.debug('UDP广播发送成�?(尝试 $attempt/3): $broadcastAddress:$discoveryPort ($bytesSent bytes)', category: 'Discovery');
             success = true;
             break;
           } else {
-            LogService.instance.debug('UDP广播发送失败 (尝试 $attempt/3): $broadcastAddress:$discoveryPort (0 bytes sent)', category: 'Discovery');
+            LogService.instance.debug('UDP广播发送失�?(尝试 $attempt/3): $broadcastAddress:$discoveryPort (0 bytes sent)', category: 'Discovery');
             if (attempt < 3) {
               await Future.delayed(Duration(milliseconds: 100 * attempt)); // 递增延迟
             }
           }
         } catch (e) {
-          LogService.instance.debug('UDP发送异常 (尝试 $attempt/3): $prefix.255 - $e', category: 'Discovery');
+          LogService.instance.debug('UDP发送异�?(尝试 $attempt/3): $prefix.255 - $e', category: 'Discovery');
           
-          // 如果是权限错误，记录但继续尝试其他网段
-          if (e.toString().contains('Permission denied') || e.toString().contains('errno = 13')) {
-            LogService.instance.warning('检测到权限被拒绝: $prefix.255', category: 'Discovery');
-            break; // 权限错误不需要重试
-          }
+          // 如果是权限错误，记录但继续尝试其他网�?          if (e.toString().contains('Permission denied') || e.toString().contains('errno = 13')) {
+            LogService.instance.warning('检测到权限被拒�? $prefix.255', category: 'Discovery');
+            break; // 权限错误不需要重�?          }
           
           if (attempt < 3) {
             await Future.delayed(Duration(milliseconds: 100 * attempt));
@@ -409,7 +386,7 @@ class DiscoveryService {
         }
       }
     } catch (e) {
-      LogService.instance.warning('UDP广播到网段 $prefix 完全失败: $e', category: 'Discovery');
+      LogService.instance.warning('UDP广播到网�?$prefix 完全失败: $e', category: 'Discovery');
     }
     
     onResult(success);
@@ -420,8 +397,7 @@ class DiscoveryService {
     final prefixes = <String>[];
     
     try {
-      // 1. 尝试获取当前设备的网络接口信息
-      final interfaces = await NetworkInterface.list(includeLoopback: false, type: InternetAddressType.IPv4);
+      // 1. 尝试获取当前设备的网络接口信�?      final interfaces = await NetworkInterface.list(includeLoopback: false, type: InternetAddressType.IPv4);
       
       for (final interface in interfaces) {
         for (final addr in interface.addresses) {
@@ -439,18 +415,12 @@ class DiscoveryService {
         }
       }
     } catch (e) {
-      LogService.instance.warning('无法获取网络接口信息: $e，使用默认网段', category: 'Discovery');
+      LogService.instance.warning('无法获取网络接口信息: $e，使用默认网�?, category: 'Discovery');
     }
     
-    // 2. 添加常见的局域网网段 - 确保覆盖大部分情况
-    final commonPrefixes = [
-      '192.168.123',  // 当前已知的网段 - 优先级最高
-      '192.168.1',    // 最常见的网段
-      '192.168.0',    // 第二常见的网段
-      '10.0.0',       // 企业网络常用
-      '172.16.0',     // 另一个私有网段
-      '192.168.100',  // 一些路由器的默认网段
-      '192.168.10',
+    // 2. 添加常见的局域网网段 - 确保覆盖大部分情�?    final commonPrefixes = [
+      '192.168.123',  // 当前已知的网�?- 优先级最�?      '192.168.1',    // 最常见的网�?      '192.168.0',    // 第二常见的网�?      '10.0.0',       // 企业网络常用
+      '172.16.0',     // 另一个私有网�?      '192.168.100',  // 一些路由器的默认网�?      '192.168.10',
       '192.168.2',
       '192.168.11',
       '192.168.50',
@@ -462,13 +432,12 @@ class DiscoveryService {
       }
     }
     
-    // 确保至少有一些网段用于扫描
-    if (prefixes.isEmpty) {
+    // 确保至少有一些网段用于扫�?    if (prefixes.isEmpty) {
       prefixes.addAll(['192.168.123', '192.168.1', '192.168.0', '10.0.0']);
       LogService.instance.warning('使用后备默认网段进行扫描', category: 'Discovery');
     }
     
-    LogService.instance.info('UDP广播网段列表 (${prefixes.length}个): ${prefixes.take(5).join(", ")}${prefixes.length > 5 ? "..." : ""}', category: 'Discovery');
+    LogService.instance.info('UDP广播网段列表 (${prefixes.length}�?: ${prefixes.take(5).join(", ")}${prefixes.length > 5 ? "..." : ""}', category: 'Discovery');
     return prefixes;
   }
 
@@ -494,8 +463,7 @@ class DiscoveryService {
             _discoveredDevices.removeWhere((d) => d.ipAddress == device.ipAddress && d.port == device.port);
             _discoveredDevices.add(device);
             
-            // 通知监听者
-            _devicesController.add(_discoveredDevices.toList());
+            // 通知监听�?            _devicesController.add(_discoveredDevices.toList());
           }
         } catch (e) {
           LogService.instance.debug('解析发现响应失败: $e', category: 'Discovery');

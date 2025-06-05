@@ -82,8 +82,7 @@ class FileOutput extends LogOutput {
         file.writeAsStringSync('$line\n', mode: FileMode.append);
       }
     } catch (e) {
-      // 静默处理文件写入错误，避免日志系统本身影响应用
-    }
+      // 静默处理文件写入错误，避免日志系统本身影响应�?    }
   }
 
   void _rotateFileIfNeeded() {
@@ -106,8 +105,7 @@ class FileOutput extends LogOutput {
       oldestFile.deleteSync();
     }
 
-    // 重命名现有文件
-    for (int i = maxFiles - 1; i >= 1; i--) {
+    // 重命名现有文�?    for (int i = maxFiles - 1; i >= 1; i--) {
       final currentFile = File('${directory.path}/${baseName}_$i.$extension');
       final nextFile = File('${directory.path}/${baseName}_${i + 1}.$extension');
       
@@ -116,8 +114,7 @@ class FileOutput extends LogOutput {
       }
     }
 
-    // 重命名当前文件
-    if (file.existsSync()) {
+    // 重命名当前文�?    if (file.existsSync()) {
       final rotatedFile = File('${directory.path}/${baseName}_1.$extension');
       file.renameSync(rotatedFile.path);
     }
@@ -159,8 +156,7 @@ class LogService {
           methodCount: 2,
           errorMethodCount: 8,
           lineLength: 120,
-          colors: false, // 文件日志不需要颜色
-          printEmojis: false,
+          colors: false, // 文件日志不需要颜�?          printEmojis: false,
           printTime: true,
         ),
         output: MultiOutput([
@@ -332,8 +328,7 @@ class LogService {
       stackTrace: stackTrace,
     );
 
-    // 使用Logger输出，如果还未初始化则降级到控制台输出
-    final logger = _logger;
+    // 使用Logger输出，如果还未初始化则降级到控制台输�?    final logger = _logger;
     if (logger != null) {
       switch (level) {
         case LogLevel.debug:
