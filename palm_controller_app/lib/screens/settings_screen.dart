@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -166,13 +166,13 @@ class SettingsScreen extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF607D8B).withOpacity(0.1),
-            const Color(0xFF455A64).withOpacity(0.05),
+            const Color(0xFF607D8B).withValues(alpha: 0.1),
+            const Color(0xFF455A64).withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF607D8B).withOpacity(0.2),
+          color: const Color(0xFF607D8B).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -182,7 +182,7 @@ class SettingsScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF607D8B).withOpacity(0.1),
+              color: const Color(0xFF607D8B).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -209,7 +209,7 @@ class SettingsScreen extends ConsumerWidget {
                 Text(
                   '个性化您的掌控者体验',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -490,7 +490,7 @@ class SettingsScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [5, 10, 15, 20, 30].map((timeout) {
             return RadioListTile<int>(
-              title: Text('${timeout}秒'),
+              title: Text('$timeout秒'),
               value: timeout,
               groupValue: settings.connectionTimeout,
               onChanged: (value) {

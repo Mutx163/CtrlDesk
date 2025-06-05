@@ -27,13 +27,13 @@ class BottomNavigationBarWidget extends ConsumerWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         border: Border(
           top: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -199,7 +199,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected 
-                ? item.color.withOpacity(0.12)
+                ? item.color.withValues(alpha: 0.12)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
           ),
@@ -217,7 +217,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
                       size: isSelected ? 28 : 24,
                       color: isSelected 
                           ? item.color
-                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -229,7 +229,7 @@ class BottomNavigationBarWidget extends ConsumerWidget {
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected 
                           ? item.color
-                          : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                     child: Text(
                       item.label,
@@ -329,7 +329,7 @@ class _PulsingDotState extends State<_PulsingDot>
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: widget.color.withOpacity(0.4),
+                  color: widget.color.withValues(alpha: 0.4),
                   blurRadius: 4 * _animation.value,
                   spreadRadius: 2 * _animation.value,
                 ),
