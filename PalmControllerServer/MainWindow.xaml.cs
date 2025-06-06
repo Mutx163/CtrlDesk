@@ -1,7 +1,10 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
+using System.Windows.Controls;
+using System.Windows.Forms; // 添加 WinForms 引用
 using PalmControllerServer.Services;
 
 namespace PalmControllerServer
@@ -15,12 +18,14 @@ namespace PalmControllerServer
         private SystemControlService _systemControlService = null!;
         private DiscoveryService _discoveryService = null!;
         private int _connectedClients = 0;
+        private NotifyIcon? _notifyIcon; // 改用原生 NotifyIcon
 
         public MainWindow()
         {
             InitializeComponent();
             InitializeServices();
             InitializeLogging();
+            InitializeTrayIcon(); // 初始化托盘图标
             
             // 自动启动Socket服务器用于测试
             AutoStartServer();
@@ -84,6 +89,63 @@ namespace PalmControllerServer
             // 使用新的日志服务
             LogService.Instance.Info("PalmController Server UI initialized", "UI");
             AddLogMessage("服务端已启动");
+        }
+
+        private void InitializeTrayIcon()
+        {
+            try
+            {
+                _notifyIcon = new NotifyIcon()
+                {
+                    Icon = SystemIcons.Information, // 使用系统图标
+                    Text = "掌控者服务端",
+                    Visible = true // 重要：必须设置为 true
+                };
+
+                // 创建右键菜单
+                var contextMenu = new ContextMenuStrip();
+                
+                var showItem = new ToolStripMenuItem("显示/隐藏窗口");
+                showItem.Click += (s, e) => ToggleWindowVisibility();
+                
+                var exitItem = new ToolStripMenuItem("退出");
+                exitItem.Click += (s, e) => ExitApplication();
+                
+                contextMenu.Items.Add(showItem);
+                contextMenu.Items.Add(exitItem);
+                
+                _notifyIcon.ContextMenuStrip = contextMenu;
+                
+                // 双击事件
+                _notifyIcon.MouseDoubleClick += (s, e) => ToggleWindowVisibility();
+                
+                AddLogMessage("原生托盘图标初始化成功。");
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"创建托盘图标时发生致命错误: {ex.ToString()}", "托盘图标错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                AddLogMessage($"托盘图标创建失败: {ex.ToString()}");
+            }
+        }
+        
+        private void ToggleWindowVisibility()
+        {
+            if (IsVisible)
+            {
+                Hide();
+            }
+            else
+            {
+                Show();
+                WindowState = WindowState.Normal;
+                Activate();
+            }
+        }
+        
+        private void ExitApplication()
+        {
+            _notifyIcon?.Dispose();
+            System.Windows.Application.Current.Shutdown();
         }
 
         private async void StartButton_Click(object sender, RoutedEventArgs e)
@@ -151,8 +213,7 @@ namespace PalmControllerServer
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
         {
-            // 最小化到系统托盘（后续实现）
-            WindowState = WindowState.Minimized;
+            // 最小化到系统托盘
             Hide();
         }
 
@@ -270,6 +331,14 @@ namespace PalmControllerServer
                 Hide();
             }
             base.OnStateChanged(e);
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            // 阻止窗口关闭，而是将其隐藏
+            e.Cancel = true;
+            Hide();
+            base.OnClosing(e);
         }
     }
 }

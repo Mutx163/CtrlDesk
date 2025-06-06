@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/control_message.dart';
+import '../services/socket_service.dart';
+import 'connection_provider.dart';
 
 // 硬件信息数据模型
 class HardwareInfo {
@@ -45,6 +49,19 @@ class PerformanceData {
     this.networkUpload = 0.0,
     this.networkDownload = 0.0,
   });
+
+  // Method to create a copy with new values from a map
+  PerformanceData.fromJson(Map<String, dynamic> json)
+      : cpuUsage = (json['cpu_usage'] as num?)?.toDouble() ?? 0.0,
+        ramUsage = (json['ram_usage'] as num?)?.toDouble() ?? 0.0,
+        diskUsage = (json['disk_usage'] as num?)?.toDouble() ?? 0.0,
+        gpuUsage = (json['gpu_usage'] as num?)?.toDouble() ?? 0.0,
+        cpuTemp = (json['cpu_temp'] as num?)?.toDouble() ?? 0.0,
+        gpuTemp = (json['gpu_temp'] as num?)?.toDouble() ?? 0.0,
+        motherboardTemp = (json['motherboard_temp'] as num?)?.toDouble() ?? 0.0,
+        fanSpeed = (json['fan_speed'] as num?)?.toInt() ?? 0,
+        networkUpload = (json['network_upload'] as num?)?.toDouble() ?? 0.0,
+        networkDownload = (json['network_download'] as num?)?.toDouble() ?? 0.0;
 }
 
 // 硬件信息Provider
@@ -60,20 +77,37 @@ final hardwareInfoProvider = StateProvider<HardwareInfo>((ref) {
   );
 });
 
-// 性能数据Provider
-final performanceDataProvider = StateProvider<PerformanceData>((ref) {
-  // 这里使用随机数据模拟实时更新的效果
-  // 在真实应用中，这些数据应由Socket推送更新
-  return PerformanceData(
-    cpuUsage: 45 + (math.Random().nextDouble() * 30),
-    ramUsage: 60 + (math.Random().nextDouble() * 15),
-    gpuUsage: 25 + (math.Random().nextDouble() * 50),
-    diskUsage: 20 + (math.Random().nextDouble() * 30),
-    cpuTemp: 65 + (math.Random().nextDouble() * 10),
-    gpuTemp: 70 + (math.Random().nextDouble() * 10),
-    motherboardTemp: 40 + (math.Random().nextDouble() * 10),
-    fanSpeed: 1500 + (math.Random().nextInt(500)),
-    networkUpload: math.Random().nextDouble() * 50,
-    networkDownload: math.Random().nextDouble() * 200,
-  );
+// Create a StateNotifier for PerformanceData
+class PerformanceDataNotifier extends StateNotifier<PerformanceData> {
+  final Ref _ref;
+  StreamSubscription? _messageSubscription;
+
+  PerformanceDataNotifier(this._ref) : super(PerformanceData()) {
+    _listenToMessages();
+  }
+
+  void _listenToMessages() {
+    _messageSubscription?.cancel(); // Ensure no multiple listeners
+    _messageSubscription = _ref.read(socketServiceProvider).messageStream.listen((message) {
+      if (message.type == 'system_status' && message.payload != null) {
+        updateData(message.payload!);
+      }
+    });
+  }
+
+  // This method will be called by the socket service to update the state
+  void updateData(Map<String, dynamic> jsonData) {
+    state = PerformanceData.fromJson(jsonData);
+  }
+
+  @override
+  void dispose() {
+    _messageSubscription?.cancel();
+    super.dispose();
+  }
+}
+
+// Create the StateNotifierProvider
+final performanceDataProvider = StateNotifierProvider<PerformanceDataNotifier, PerformanceData>((ref) {
+  return PerformanceDataNotifier(ref);
 }); 

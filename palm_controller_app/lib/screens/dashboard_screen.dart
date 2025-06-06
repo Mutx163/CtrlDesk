@@ -7,6 +7,7 @@ import '../models/control_message.dart';
 import '../providers/connection_provider.dart';
 import '../providers/monitor_provider.dart';
 import '../services/socket_service.dart';
+import 'computer_status_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -165,7 +166,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          _buildSystemStatusCard(context, performanceData),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ComputerStatusScreen()),
+              );
+            },
+            child: _buildSystemStatusCard(context, performanceData),
+          ),
           const SizedBox(height: 16),
           _buildVolumeControlCard(context, volumeState),
           const SizedBox(height: 16),
