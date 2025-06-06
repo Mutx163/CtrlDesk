@@ -139,6 +139,27 @@ class ControlMessage {
     );
   }
 
+  // 文件操作消息
+  factory ControlMessage.fileOperation({
+    required String messageId,
+    required String operation, // list_files|create_directory|delete|rename|upload|download
+    String? path,
+    String? name,
+    String? data, // base64 encoded file data for upload
+  }) {
+    return ControlMessage(
+      messageId: messageId,
+      type: 'file_operation',
+      timestamp: DateTime.now(),
+      payload: {
+        'operation': operation,
+        if (path != null) 'path': path,
+        if (name != null) 'name': name,
+        if (data != null) 'data': data,
+      },
+    );
+  }
+
   @override
   String toString() {
     return 'ControlMessage(messageId: $messageId, type: $type, timestamp: $timestamp)';
