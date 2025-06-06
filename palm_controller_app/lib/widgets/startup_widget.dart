@@ -115,7 +115,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withAlpha(((0.2) * 255).round()),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -141,7 +141,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
             Text(
               'PalmController',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.white.withOpacity(0.8),
+                                    color: Colors.white.withAlpha(((0.8) * 255).round()),
               ),
             ),
             
@@ -163,7 +163,7 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
             Text(
               _statusMessage,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withAlpha(((0.9) * 255).round()),
               ),
               textAlign: TextAlign.center,
             ),
@@ -173,3 +173,4 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
     );
   }
 } 
+

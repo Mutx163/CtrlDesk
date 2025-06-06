@@ -180,7 +180,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFD32F2F).withOpacity(0.1),
+            color: const Color(0xFFD32F2F).withAlpha(((0.1) * 255).round()),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(
@@ -204,7 +204,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
               Text(
                 '实时监控PC硬件状态',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
                 ),
               ),
             ],
@@ -215,7 +215,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
           icon: const Icon(Icons.refresh_rounded),
           tooltip: '刷新数据',
           style: IconButton.styleFrom(
-            backgroundColor: const Color(0xFFD32F2F).withOpacity(0.1),
+            backgroundColor: const Color(0xFFD32F2F).withAlpha(((0.1) * 255).round()),
             foregroundColor: const Color(0xFFD32F2F),
           ),
         ),
@@ -229,10 +229,10 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFD32F2F).withOpacity(0.05),
+        color: const Color(0xFFD32F2F).withAlpha(((0.05) * 255).round()),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFD32F2F).withOpacity(0.2),
+          color: const Color(0xFFD32F2F).withAlpha(((0.2) * 255).round()),
         ),
       ),
       child: Column(
@@ -275,7 +275,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
           Icon(
             icon,
             size: 16,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
           ),
           const SizedBox(width: 8),
           SizedBox(
@@ -283,7 +283,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
               ),
             ),
           ),
@@ -307,10 +307,10 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.primaryContainer.withAlpha(((0.3) * 255).round()),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.primary.withAlpha(((0.2) * 255).round()),
         ),
       ),
       child: Column(
@@ -390,7 +390,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withAlpha(((0.2) * 255).round()),
         ),
       ),
       child: Column(
@@ -421,7 +421,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: percentage / 100,
-            backgroundColor: color.withOpacity(0.1),
+            backgroundColor: color.withAlpha(((0.1) * 255).round()),
             valueColor: AlwaysStoppedAnimation<Color>(color),
             minHeight: 6,
             borderRadius: BorderRadius.circular(3),
@@ -437,10 +437,10 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(((0.3) * 255).round()),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.secondary.withAlpha(((0.2) * 255).round()),
         ),
       ),
       child: Column(
@@ -501,7 +501,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                color: Theme.of(context).colorScheme.outline.withAlpha(((0.2) * 255).round()),
               ),
             ),
             child: Row(
@@ -553,7 +553,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: tempColor.withOpacity(0.2),
+          color: tempColor.withAlpha(((0.2) * 255).round()),
         ),
       ),
       child: Column(
@@ -563,7 +563,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
           Text(
             title,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
             ),
             textAlign: TextAlign.center,
           ),
@@ -594,10 +594,10 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.tertiaryContainer.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.tertiaryContainer.withAlpha(((0.3) * 255).round()),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.tertiary.withAlpha(((0.2) * 255).round()),
         ),
       ),
       child: Column(
@@ -664,7 +664,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withAlpha(((0.2) * 255).round()),
         ),
       ),
       child: Column(
@@ -714,7 +714,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withAlpha(((0.2) * 255).round()),
         ),
       ),
       child: Column(
@@ -734,7 +734,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
               Text(
                 '${used}GB / ${total}GB',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
                 ),
               ),
             ],
@@ -742,7 +742,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: percentage,
-            backgroundColor: Theme.of(context).colorScheme.tertiary.withOpacity(0.1),
+            backgroundColor: Theme.of(context).colorScheme.tertiary.withAlpha(((0.1) * 255).round()),
             valueColor: AlwaysStoppedAnimation<Color>(
               percentage > 0.8 ? Colors.red : Theme.of(context).colorScheme.tertiary,
             ),
@@ -766,10 +766,10 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(((0.3) * 255).round()),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withAlpha(((0.2) * 255).round()),
         ),
       ),
       child: Column(
@@ -801,7 +801,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
           Text(
             '高占用进程 Top 5',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
             ),
           ),
           const SizedBox(height: 12),
@@ -818,7 +818,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.outline.withAlpha(((0.2) * 255).round()),
                   ),
                 ),
                 child: Row(
@@ -840,14 +840,14 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
                     Text(
                       'CPU: ${(process['cpu'] as double).toStringAsFixed(1)}%',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Text(
                       '内存: ${process['memory']}MB',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -891,7 +891,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: const Color(0xFFD32F2F).withOpacity(0.1),
+              color: const Color(0xFFD32F2F).withAlpha(((0.1) * 255).round()),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -912,7 +912,7 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
           Text(
             '请先连接到PC设备后使用硬件监控功能',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
             ),
             textAlign: TextAlign.center,
           ),
@@ -933,4 +933,5 @@ class _MonitorScreenState extends ConsumerState<MonitorScreen> {
     );
   }
 } 
+
 

@@ -74,19 +74,6 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     _sendControlMessage(message);
   }
 
-  // 快速输入方法
-  void _sendQuickInput() {
-    if (_quickInputController.text.isNotEmpty) {
-      final message = ControlMessage.keyboardControl(
-        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
-        action: 'text_input',
-        text: _quickInputController.text,
-      );
-      _sendControlMessage(message);
-      _quickInputController.clear();
-    }
-  }
-
   // 设置系统音量 - 优化版本
   void _setSystemVolume(double volume) {
     // 立即更新本地状态，提供即时反馈

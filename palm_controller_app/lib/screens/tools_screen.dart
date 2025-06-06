@@ -77,13 +77,13 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFFF9800).withOpacity(0.1),
-            const Color(0xFFF57C00).withOpacity(0.05),
+            const Color(0xFFFF9800).withAlpha(((0.1) * 255).round()),
+            const Color(0xFFF57C00).withAlpha(((0.05) * 255).round()),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFFF9800).withOpacity(0.2),
+          color: const Color(0xFFFF9800).withAlpha(((0.2) * 255).round()),
           width: 1,
         ),
       ),
@@ -93,7 +93,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF9800).withOpacity(0.1),
+              color: const Color(0xFFFF9800).withAlpha(((0.1) * 255).round()),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -131,7 +131,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                     Text(
                       currentConnection?.name ?? 'Windows PC',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.7) * 255).round()),
                       ),
                     ),
                   ],
@@ -153,12 +153,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFFF9800).withOpacity(0.2),
+          color: const Color(0xFFFF9800).withAlpha(((0.2) * 255).round()),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF9800).withOpacity(0.1),
+            color: const Color(0xFFFF9800).withAlpha(((0.1) * 255).round()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -229,12 +229,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF795548).withOpacity(0.2),
+          color: const Color(0xFF795548).withAlpha(((0.2) * 255).round()),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF795548).withOpacity(0.1),
+            color: const Color(0xFF795548).withAlpha(((0.1) * 255).round()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -309,12 +309,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withOpacity(0.2),
+          color: const Color(0xFF4CAF50).withAlpha(((0.2) * 255).round()),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4CAF50).withOpacity(0.1),
+            color: const Color(0xFF4CAF50).withAlpha(((0.1) * 255).round()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -374,12 +374,12 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF00BCD4).withOpacity(0.2),
+          color: const Color(0xFF00BCD4).withAlpha(((0.2) * 255).round()),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00BCD4).withOpacity(0.1),
+            color: const Color(0xFF00BCD4).withAlpha(((0.1) * 255).round()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -433,7 +433,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   /// 截图按钮构建器
   Widget _buildScreenshotButton(String label, IconData icon, VoidCallback onPressed) {
     return Material(
-      color: const Color(0xFFFF5722).withOpacity(0.1),
+      color: const Color(0xFFFF5722).withAlpha(((0.1) * 255).round()),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: _isScreenshotLoading ? null : onPressed,
@@ -470,7 +470,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
   /// 系统控制按钮构建器
   Widget _buildSystemControlButton(String label, IconData icon, Color color, VoidCallback onPressed) {
     return Material(
-      color: color.withOpacity(0.1),
+      color: color.withAlpha(((0.1) * 255).round()),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onPressed,
@@ -545,7 +545,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
               flex: 2,
               child: LinearProgressIndicator(
                 value: progress,
-                backgroundColor: color.withOpacity(0.2),
+                backgroundColor: color.withAlpha(((0.2) * 255).round()),
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
             ),
@@ -575,7 +575,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.7) * 255).round()),
               ),
             ),
           ),
@@ -608,13 +608,13 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFFFF9800).withOpacity(0.1),
-                    const Color(0xFFF57C00).withOpacity(0.05),
+                    const Color(0xFFFF9800).withAlpha(((0.1) * 255).round()),
+                    const Color(0xFFF57C00).withAlpha(((0.05) * 255).round()),
                   ],
                 ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFFFF9800).withOpacity(0.2),
+                  color: const Color(0xFFFF9800).withAlpha(((0.2) * 255).round()),
                   width: 2,
                 ),
               ),
@@ -638,7 +638,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             Text(
               '需要连接PC设备才能使用',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.7) * 255).round()),
               ),
               textAlign: TextAlign.center,
             ),
@@ -646,7 +646,7 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             Text(
               '连接后即可使用截图、控制和监控工具',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
               ),
               textAlign: TextAlign.center,
             ),
@@ -657,10 +657,10 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9800).withOpacity(0.05),
+                color: const Color(0xFFFF9800).withAlpha(((0.05) * 255).round()),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFFF9800).withOpacity(0.2),
+                  color: const Color(0xFFFF9800).withAlpha(((0.2) * 255).round()),
                   width: 1,
                 ),
               ),
@@ -851,4 +851,5 @@ class _ToolsScreenState extends ConsumerState<ToolsScreen> {
     );
   }
 } 
+
 
