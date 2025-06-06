@@ -12,11 +12,40 @@
 - **系统管理**: 电源控制、演示助手、系统信息
 
 ### 🛠️ 技术架构
-- **前端**: Flutter (Android) - Material Design 3
-- **后端**: C# .NET 9.0 (Windows) - WPF界面
-- **通信**: TCP长连接(8080) + UDP设备发现(8079)
-- **协议**: 统一JSON消息格式
-- **状态管理**: Riverpod Provider生态系统
+
+#### 1. 核心技术栈
+- **客户端 (Android)**: Flutter 3.x, Riverpod 2.x, GoRouter
+- **服务端 (Windows)**: C# .NET 9.0 (WPF for UI)
+- **通信协议**: TCP (控制), UDP (发现), JSON
+
+#### 2. 客户端分层设计
+```mermaid
+graph TD
+    A[UI层 (Screens/Widgets)] --> B[状态管理层 (Providers)];
+    B --> C[服务层 (Services)];
+    C --> D[数据模型层 (Models)];
+    C --> E[通信层 (Socket)];
+```
+- **UI层 (`lib/screens`, `lib/widgets`)**: 负责界面展示和用户交互。
+- **状态管理层 (`lib/providers`)**: 使用 Riverpod 管理所有应用状态，连接UI与服务。
+- **服务层 (`lib/services`)**: 处理与外部世界的交互，如Socket通信。
+- **数据模型层 (`lib/models`)**: 定义应用的数据结构。
+
+#### 3. 导航与页面结构
+应用采用集中式导航，由 `MainScaffold` 基于 `ConnectionStatus` 管理两种页面集（已连接/未连接），并动态控制 `PageView`，确保状态切换的健壮性。
+
+#### 4. 最新文件结构
+```
+palm_controller_app/lib/
+├── main.dart             # 应用入口
+├── models/               # 数据模型
+├── providers/            # Riverpod Providers
+├── screens/              # 主屏幕/页面
+│   ├── dashboard_screen.dart # 新主页
+│   └── ... (其他核心页面)
+├── services/             # 核心服务
+└── widgets/              # 可复用UI组件
+```
 
 ---
 
@@ -104,6 +133,36 @@
 ---
 
 ## 📈 开发里程碑
+
+---
+
+### 🔥 任务日志 - 2025-06-06
+
+#### **模块/功能：** UI现代化重构 与 核心交互体验优化
+
+#### **完成情况总结：**
+- ✅ **UI现代化重构**：完成了应用主界面的彻底重构，用一个基于 `PageView` 和 `BottomNavigationBar` 的五标签页仪表盘，替换了旧的多页面、多路由的复杂设计，实现了设计稿 (`home.html`) 的要求。
+- ✅ **核心功能迁移**：成功将旧页面的核心功能（如模拟的性能监控、带防抖的音量控制、系统快捷操作）无缝迁移至新的仪表盘 (`DashboardScreen`)。
+- ✅ **专业级交互优化**：解决了音量条在与PC端同步时"加载慢"、"滑动闪烁"、"松手后闪回"等一系列连锁的复杂交互问题，最终实现了平滑、稳定、无感知的专业级远程控制体验。
+- ✅ **健壮性修复**：修复了多个严重的运行时崩溃问题，包括因 `ref.listen` 使用不当导致的启动断言错误，以及因连接状态切换导致的 `PageView` 索引越界崩溃。
+- ✅ **代码库清理**：识别并删除了5个因界面改版而完全废弃的旧屏幕文件 (`monitor_screen.dart`, `tools_screen.dart`等)，大幅提升了代码库的整洁度和可维护性。
+
+#### **遇到的主要问题及解决方案：**
+1.  **问题：音量条交互体验差 (闪烁、闪回)**
+    *   **解决方案：** 采用了先进的状态同步策略。首先通过引入本地"乐观更新"状态 (`_localVolume`) 解决滑动不平滑问题；随后，在用户操作结束时"锁定"UI状态，并使用 `ref.listen` 监听远端状态确认后才"解锁"UI，彻底解决了状态竞速 (Race Condition) 导致的"闪回"问题。
+2.  **问题：Riverpod `ref.listen` 使用不当导致启动崩溃**
+    *   **解决方案：** 严格遵循Riverpod框架规则，将 `ref.listen` 的调用从 `initState` 生命周期迁移到 `build` 方法中，修复了断言错误。
+3.  **问题：连接状态切换时 `PageView` 索引越界导致崩溃**
+    *   **解决方案：** 通过监听连接状态 (`ConnectionStatus`) 的变化，在状态变更时主动重新计算安全索引并重建 `PageController`，从根本上保证了导航的健壮性。
+
+#### **对项目架构的影响：**
+- **导航结构根本性变革**：应用的主导航模式从原有的多页面、分散式路由，演变为一个高度集中的、基于 `MainScaffold` 和 `PageView` 的单体导航结构。这简化了路由管理，并统一了用户体验。
+- **文件结构大幅简化**：通过删除5个废弃屏幕文件，`lib/screens` 目录的结构变得更加清晰、现代化，准确反映了当前的应用功能。
+- **状态管理模式优化**：将原 `monitor_screen.dart` 中的性能数据逻辑提取到了独立的 `lib/providers/monitor_provider.dart`，提升了状态的可复用性和模块化程度。
+
+#### **下一步计划/待办：**
+- 继续完善新UI中其他占位页面（如文件、媒体）的真实功能。
+- 对所有迁移和重构的功能进行一次全面的回归测试，确保稳定性。
 
 ---
 
@@ -595,8 +654,4 @@
 *   **实现：** 新的 `mediaStatusProvider` 和 `systemInfoProvider` 封装了监听Socket消息、解析数据、更新状态的全部逻辑。这使得UI层（如 `control_screen.dart`）的实现大大简化，只需 `watch` 相应的Provider即可获得最新的、正确的数据模型，提升了代码的模块化和稳定性。
 
 **对项目架构的影响：**
-*   **状态管理层增强**：`connection_provider.dart` 的职责得到加强，现在是处理服务端推送的各类实时数据（音量、媒体、系统信息）的核心。这使得状态逻辑更集中，也更易于未来扩展（例如，增加新的可控状态）。此变更为架构增强，无需修改 `PROJECT_ARCHITECTURE.md`。
-
-**下一步计划/待办：**
-*   继续修复项目中剩余的 `deprecated_member_use` 警告。
-*   在完成所有修复后，再次运行 `flutter analyze` 确保代码库整洁。
+*   **状态管理层增强**：`connection_provider.dart` 的职责得到加强，现在是处理服务端推送的各类实时数据（音量、媒体、系统信息）的核心。这使得状态逻辑更集中，也更易于未来扩展（例如，增加新的可控状态）。此变更为架构增强，无需修改 `PROJECT_ARCHITECTURE.md`

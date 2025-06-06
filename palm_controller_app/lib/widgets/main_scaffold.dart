@@ -149,6 +149,7 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     return Scaffold(
       body: PageView(
         controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(), // 禁用滑动手势，只允许通过底部导航切换
         onPageChanged: (index) {
           setState(() {
             _currentPageIndex = index;

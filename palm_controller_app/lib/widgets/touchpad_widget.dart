@@ -12,40 +12,78 @@ class TouchpadWidget extends ConsumerStatefulWidget {
   ConsumerState<TouchpadWidget> createState() => _TouchpadWidgetState();
 }
 
-class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
-  // 防抖定时�?
+class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> with TickerProviderStateMixin {
+  // 防抖定时器
   Timer? _mouseMoveDebounce;
   
   // 事件节流
   DateTime _lastMouseSendTime = DateTime.now();
-  static const int _mouseThrottleMs = 16; // �?0fps
+  static const int _mouseThrottleMs = 16; // 60fps
   
   bool _isDragging = false;
+  
+  // 动画控制器
+  late AnimationController _pulseController;
+  late AnimationController _touchController;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _touchAnimation;
   
   @override
   void initState() {
     super.initState();
+    
+    // 初始化动画控制器
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    
+    _touchController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    
+    _pulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _touchAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _touchController,
+      curve: Curves.easeInOut,
+    ));
+    
+    // 开始轻微的脉冲动画
+    _pulseController.repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _mouseMoveDebounce?.cancel();
+    _pulseController.dispose();
+    _touchController.dispose();
     super.dispose();
   }
 
-  // Socket 通信方法 - 带节流的发�?
+  // Socket 通信方法 - 带节流的发送
   void _sendMouseMove(double deltaX, double deltaY) {
     final now = DateTime.now();
     final timeDiff = now.difference(_lastMouseSendTime).inMilliseconds;
     
-    // 节流：限制发送频�?
+    // 节流：限制发送频率
     if (timeDiff < _mouseThrottleMs) {
       return;
     }
     
     _lastMouseSendTime = now;
     
-    // 发送鼠标移动指�?
+    // 发送鼠标移动指令
     final socketService = ref.read(socketServiceProvider);
     socketService.sendMouseControl(
       action: 'move',
@@ -58,6 +96,12 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     if (hapticFeedback) {
       HapticFeedback.lightImpact();
     }
+    
+    // 触摸动画
+    _touchController.forward().then((_) {
+      _touchController.reverse();
+    });
+    
     final socketService = ref.read(socketServiceProvider);
     socketService.sendMouseControl(
       action: 'click',
@@ -67,6 +111,11 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
   }
 
   void _sendMouseDoubleClick() {
+    // 触摸动画
+    _touchController.forward().then((_) {
+      _touchController.reverse();
+    });
+    
     final socketService = ref.read(socketServiceProvider);
     socketService.sendMouseControl(
       action: 'click',
@@ -96,47 +145,54 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withAlpha(((0.2) * 255).round()),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withAlpha(((0.1) * 255).round()),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return AnimatedBuilder(
+      animation: _touchAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _touchAnimation.value,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // 简化的顶部栏
+                _buildHeader(context, settings),
+                
+                // 主触摸板区域
+                Expanded(
+                  child: _buildTouchpadArea(context, settings),
+                ),
+                
+                // 四个大按钮的底部区域
+                _buildButtonArea(context, settings),
+              ],
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // 精简的顶部控制栏 - 人因工程学：最小化非主要功能占用空�?
-          _buildCompactHeader(context, settings),
-          
-          // 主触摸板区域 - 最大化设计 (占用�?5%的空�?
-          Expanded(
-            flex: 85, 
-            child: _buildMaximizedTouchpadArea(context, settings),
-          ),
-          
-          // 精简的底部按钮栏 - 人因工程学：必要控制的紧凑布局
-          _buildCompactButtonBar(context, settings),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  /// 精简的顶部控制栏 - 人因工程学：减少垂直空间占用
-  Widget _buildCompactHeader(BuildContext context, AppSettings settings) {
+  /// 简化的顶部栏
+  Widget _buildHeader(BuildContext context, AppSettings settings) {
     return Container(
-      height: 48, // 大幅减少高度，从原来的约80px减少�?8px
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withAlpha(((0.05) * 255).round()),
+        color: Theme.of(context).colorScheme.surfaceContainer.withOpacity(0.5),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -144,239 +200,166 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
       ),
       child: Row(
         children: [
-          // 触摸板图�?- 小型�?
           Icon(
-            Icons.touch_app_rounded,
+            Icons.mouse_rounded,
             color: Theme.of(context).colorScheme.primary,
-            size: 16,
+            size: 20,
           ),
-          const SizedBox(width: 8),
-          
-          // 标题和灵敏度信息 - 单行显示
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              '触摸�?· 灵敏�?${(settings.mouseSensitivity * 100).round()}%',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '触控板',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '灵敏度 ${(settings.mouseSensitivity * 100).round()}%',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
-          
-          // 精简设置按钮
           IconButton(
             onPressed: () => _showSensitivityDialog(settings),
             icon: Icon(
               Icons.tune_rounded,
-              size: 16,
               color: Theme.of(context).colorScheme.primary,
+              size: 18,
             ),
-            tooltip: '调节灵敏度',
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            iconSize: 18,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
           ),
         ],
       ),
     );
   }
 
-  /// 最大化触摸板区�?- 人因工程学核心：触摸区域优先
-  Widget _buildMaximizedTouchpadArea(BuildContext context, AppSettings settings) {
+  /// 简化的触摸板区域
+  Widget _buildTouchpadArea(BuildContext context, AppSettings settings) {
     return Container(
-      margin: const EdgeInsets.all(8), // 减少边距，最大化触摸区域
+      margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withAlpha(((0.02) * 255).round()),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surfaceContainer.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withAlpha(((0.1) * 255).round()),
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
           width: 1,
         ),
       ),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onPanStart: _handlePanStart,
-        onPanUpdate: (details) => _handlePanUpdate(details, settings.mouseSensitivity),
-        onPanEnd: _handlePanEnd,
-        onTap: () => _handleTap(settings.hapticFeedback),
-        onDoubleTap: () => _handleDoubleTap(settings.hapticFeedback),
-        onLongPress: () => _handleLongPress(settings.hapticFeedback),
-        child: SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: Stack(
-            children: [
-              // 边缘引导�?- 增强边界感知
-              Positioned.fill(
-                child: Container(
-                  margin: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withAlpha(((0.1) * 255).round()),
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              
-              // 中心指示�?- 优化尺寸和位�?
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withAlpha(((0.9) * 255).round()),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withAlpha(((0.2) * 255).round()),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).colorScheme.shadow.withAlpha(((0.1) * 255).round()),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.mouse_rounded,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.primary.withAlpha(((0.7) * 255).round()),
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: _handlePointerDown,
+          onPointerMove: (event) => _handlePointerMove(event, settings.mouseSensitivity),
+          onPointerUp: _handlePointerUp,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _handleTap(settings.hapticFeedback),
+            onDoubleTap: () => _handleDoubleTap(settings.hapticFeedback),
+            onLongPress: () => _handleLongPress(settings.hapticFeedback),
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _pulseAnimation,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _pulseAnimation.value * 0.6 + 0.4,
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          Icon(
+                            Icons.touch_app_rounded,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.6),
+                          ),
+                          const SizedBox(height: 12),
                           Text(
-                            '触摸移动',
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.primary,
+                            '触摸移动光标',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
+                          const SizedBox(height: 8),
                           Text(
-                            '单击·双击·长按',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
+                            '单击 • 双击 • 长按右键',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
-              
-              // 角落触摸提示 - 人因工程学：增强边界识别
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Container(
-                  width: 3,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withAlpha(((0.3) * 255).round()),
-                    borderRadius: BorderRadius.circular(1.5),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 3,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withAlpha(((0.3) * 255).round()),
-                    borderRadius: BorderRadius.circular(1.5),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 8,
-                left: 8,
-                child: Container(
-                  width: 3,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withAlpha(((0.3) * 255).round()),
-                    borderRadius: BorderRadius.circular(1.5),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 8,
-                right: 8,
-                child: Container(
-                  width: 3,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withAlpha(((0.3) * 255).round()),
-                    borderRadius: BorderRadius.circular(1.5),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  /// 紧凑型底部按钮栏 - 人因工程学：44dp最小触摸目标，合理布局
-  Widget _buildCompactButtonBar(BuildContext context, AppSettings settings) {
+  /// 三区域按钮布局：左键 | 滚轮(上下) | 右键
+  Widget _buildButtonArea(BuildContext context, AppSettings settings) {
     return Container(
-      height: 64, // 固定高度，确保符�?4dp最小触摸目�?
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withAlpha(((0.05) * 255).round()),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
-      ),
+      height: 70,
       child: Row(
         children: [
-          // 左键按钮 - 44dp最小触摸目�?
+          // 左键按钮
           Expanded(
-            child: _buildTouchTargetButton(
+            flex: 2,
+            child: _buildButton(
               context,
               icon: Icons.mouse_rounded,
               label: '左键',
+              isPrimary: true,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+              ),
               onPressed: () => _sendMouseClick('left', settings.hapticFeedback),
             ),
           ),
-          const SizedBox(width: 8),
           
-          // 滚轮区域 - 紧凑设计
-          SizedBox(
-            width: 72, // 减少宽度，给主按钮更多空�?
+          // 滚轮区域 - 上下布局
+          Expanded(
+            flex: 1,
             child: Column(
               children: [
+                // 上滚轮按钮
                 Expanded(
-                  child: _buildScrollButton(
+                  child: _buildButton(
                     context,
                     icon: Icons.keyboard_arrow_up_rounded,
+                    label: '上滚',
+                    isPrimary: false,
+                    borderRadius: BorderRadius.zero,
                     onPressed: () => _sendMouseScroll(0, -1, settings.hapticFeedback),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '滚轮',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.6) * 255).round()),
-                    fontSize: 10,
-                  ),
-                ),
-                const SizedBox(height: 2),
+                // 下滚轮按钮  
                 Expanded(
-                  child: _buildScrollButton(
+                  child: _buildButton(
                     context,
                     icon: Icons.keyboard_arrow_down_rounded,
+                    label: '下滚',
+                    isPrimary: false,
+                    borderRadius: BorderRadius.zero,
                     onPressed: () => _sendMouseScroll(0, 1, settings.hapticFeedback),
                   ),
                 ),
@@ -384,13 +367,17 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
             ),
           ),
           
-          const SizedBox(width: 8),
-          // 右键按钮 - 44dp最小触摸目�?
+          // 右键按钮
           Expanded(
-            child: _buildTouchTargetButton(
+            flex: 2,
+            child: _buildButton(
               context,
               icon: Icons.more_vert_rounded,
               label: '右键',
+              isPrimary: false,
+              borderRadius: const BorderRadius.only(
+                bottomRight: Radius.circular(20),
+              ),
               onPressed: () => _sendMouseClick('right', settings.hapticFeedback),
             ),
           ),
@@ -399,83 +386,97 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     );
   }
 
-  /// 符合44dp最小触摸目标的按钮 - 人因工程学标�?
-  Widget _buildTouchTargetButton(
+  /// 直接分割空间的按钮样式
+  Widget _buildButton(
     BuildContext context, {
     required IconData icon,
     required String label,
+    required bool isPrimary,
+    required BorderRadius borderRadius,
     required VoidCallback onPressed,
   }) {
+    // 滚轮按钮只显示图标，不显示文字
+    bool isScrollButton = label.contains('滚');
+    
     return Material(
-      color: Colors.transparent,
+      color: isPrimary 
+        ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+        : Theme.of(context).colorScheme.surfaceContainer.withOpacity(0.5),
+      borderRadius: borderRadius,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          height: 48, // 确保48dp高度，符合人因工程学标准
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withAlpha(((0.2) * 255).round()),
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: Theme.of(context).colorScheme.primary,
-                size: 18,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 紧凑型滚轮按�?
-  Widget _buildScrollButton(
-    BuildContext context, {
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: borderRadius,
         child: Container(
           width: double.infinity,
-          height: 20, // 精简高度
+          height: double.infinity,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withAlpha(((0.2) * 255).round()),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+              width: 0.5,
             ),
+            borderRadius: borderRadius,
           ),
-          child: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.primary,
-            size: 14,
-          ),
+          child: isScrollButton 
+            ? Center(
+                // 滚轮按钮：只显示图标，居中
+                child: Icon(
+                  icon,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                  size: 24,
+                ),
+              )
+            : Column(
+                // 左右键按钮：图标+文字
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    color: isPrimary 
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                    size: 24,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: isPrimary 
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
         ),
       ),
     );
   }
 
-  // 手势处理方法
+  // 手势处理方法 - 使用指针事件以避免手势冲突
+  void _handlePointerDown(PointerDownEvent event) {
+    _isDragging = true;
+  }
+
+  void _handlePointerMove(PointerMoveEvent event, double sensitivity) {
+    if (!_isDragging) return;
+
+    double deltaX = event.delta.dx;
+    double deltaY = event.delta.dy;
+
+    // 应用基础灵敏度放大和用户设置
+    double amplifiedDeltaX = deltaX * 2.0 * sensitivity;
+    double amplifiedDeltaY = deltaY * 2.0 * sensitivity;
+
+    _sendMouseMove(amplifiedDeltaX, amplifiedDeltaY);
+  }
+
+  void _handlePointerUp(PointerUpEvent event) {
+    _isDragging = false;
+  }
+
+  // 保持原有的手势处理方法（兼容性）
   void _handlePanStart(DragStartDetails details) {
     _isDragging = true;
   }
@@ -512,47 +513,118 @@ class _TouchpadWidgetState extends ConsumerState<TouchpadWidget> {
     _sendMouseClick('right', hapticFeedback);
   }
 
-
-
   void _showSensitivityDialog(AppSettings settings) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('调节鼠标灵敏度'),
-        content: StatefulBuilder(
-          builder: (context, setState) {
-            return Column(
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final currentSettings = ref.watch(settingsProvider);
+          final settingsNotifier = ref.read(settingsProvider.notifier);
+          
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.tune_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text('灵敏度调节'),
+              ],
+            ),
+            content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('当前灵敏度 ${(settings.mouseSensitivity * 100).round()}%'),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.speed_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '${(currentSettings.mouseSensitivity * 100).round()}%',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: Theme.of(context).colorScheme.primary,
+                    inactiveTrackColor: Theme.of(context).colorScheme.surfaceContainer,
+                    thumbColor: Theme.of(context).colorScheme.primary,
+                    overlayColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    trackHeight: 6,
+                  ),
+                  child: Slider(
+                    value: currentSettings.mouseSensitivity,
+                    min: 0.1,
+                    max: 2.0,
+                    divisions: 19,
+                    label: '${(currentSettings.mouseSensitivity * 100).round()}%',
+                    onChanged: (value) {
+                      settingsNotifier.updateMouseSensitivity(value);
+                    },
+                  ),
+                ),
                 const SizedBox(height: 16),
-                Slider(
-                  value: settings.mouseSensitivity,
-                  min: 0.1,
-                  max: 3.0,
-                  divisions: 29,
-                  label: '${(settings.mouseSensitivity * 100).round()}%',
-                                     onChanged: (value) {
-                     setState(() {
-                       final settingsNotifier = ref.read(settingsProvider.notifier);
-                       settingsNotifier.updateMouseSensitivity(value);
-                     });
-                   },
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '慢速 (10%)',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                    Text(
+                      '快速 (200%)',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('完成'),
-          ),
-        ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text('完成'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
-} 
+}
 
 
 

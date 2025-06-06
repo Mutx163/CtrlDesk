@@ -408,8 +408,8 @@ class SettingsScreen extends ConsumerWidget {
           Slider(
             value: settings.mouseSensitivity,
             min: 0.1,
-            max: 3.0,
-            divisions: 29,
+            max: 2.0,
+            divisions: 19,
             onChanged: notifier.updateMouseSensitivity,
           ),
         ],
