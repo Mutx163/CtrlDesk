@@ -50,9 +50,21 @@ class AutoConnectService {
       // 启动设备发现
       final discoveryStarted = await _discoveryService.startDiscovery();
       if (!discoveryStarted) {
-        LogService.instance.warning('设备发现服务启动失败（可能缺少权限），直接进入手动连接模式', category: 'AutoConnect');
+        LogService.instance.warning('设备发现服务启动失败（可能缺少权限），但继续尝试手动扫描', category: 'AutoConnect');
         
-        // 设备发现失败时，直接停用自动连接，让用户使用手动连接
+        // 即使设备发现服务启动失败，也尝试进行一次手动扫描
+        try {
+          final devices = await _discoveryService.scanOnce(timeout: const Duration(seconds: 8));
+          if (devices.isNotEmpty) {
+            LogService.instance.info('手动扫描发现 ${devices.length} 个设备', category: 'AutoConnect');
+            _onDevicesDiscovered(devices);
+            return true;
+          }
+        } catch (e) {
+          LogService.instance.warning('手动扫描也失败: $e', category: 'AutoConnect');
+        }
+        
+        // 所有尝试都失败时，才标记为失败
         _lastError = '设备发现需要位置权限，请使用手动连接';
         _updateStatus(AutoConnectStatus.disabled);
         return false;

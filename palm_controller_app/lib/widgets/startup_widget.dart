@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/startup_service.dart';
 import '../services/log_service.dart';
+import '../services/auto_connect_service.dart';
 
 class StartupWidget extends ConsumerStatefulWidget {
   final Widget child;
@@ -36,54 +37,86 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
       // 短暂延迟确保UI初始化完成
       await Future.delayed(const Duration(milliseconds: 500));
       
-      // 检查是否有历史连接配置
-      final startupService = ref.read(startupServiceProvider);
-      final recentConnection = await startupService.getRecentConnection(ref);
+      // 启动自动设备发现服务（无论是否有历史连接都启动）
+      final autoConnectService = AutoConnectService();
       
-      if (recentConnection != null) {
-        setState(() {
-          _statusMessage = '正在连接到 ${recentConnection.name}...';
-        });
+      setState(() {
+        _statusMessage = '正在搜索设备...';
+      });
+      
+      LogService.instance.info('启动时开始自动设备发现', category: 'Startup');
+      
+      // 开始自动连接服务（包含设备发现）
+      final autoConnectStarted = await autoConnectService.startAutoConnect();
+      
+      if (autoConnectStarted) {
+        // 监听自动连接状态，等待连接或超时
+        bool connectionAttempted = false;
+        int waitTime = 0;
+        const maxWaitTime = 12000; // 最多等待12秒
+        const checkInterval = 500; // 每500ms检查一次状态
         
-        LogService.instance.info('发现历史连接配置: ${recentConnection.name} (${recentConnection.ipAddress})', category: 'Startup');
-        
-        // 尝试自动连接
-        final connected = await startupService.performStartupConnection(ref);
-        
-        if (connected) {
-          setState(() {
-            _statusMessage = '连接成功！';
-          });
+        while (waitTime < maxWaitTime && !connectionAttempted) {
+          await Future.delayed(const Duration(milliseconds: checkInterval));
+          waitTime += checkInterval;
           
-          // 连接成功，短暂显示成功消息后进入应用
-          await Future.delayed(const Duration(milliseconds: 800));
+          final status = autoConnectService.status;
+          
+          if (status == AutoConnectStatus.connected) {
+            setState(() {
+              _statusMessage = '设备连接成功！';
+            });
+            connectionAttempted = true;
+            
+            // 连接成功，短暂显示成功消息后进入应用
+            await Future.delayed(const Duration(milliseconds: 800));
+            break;
+          } else if (status == AutoConnectStatus.failed || status == AutoConnectStatus.disabled) {
+            setState(() {
+              _statusMessage = '未发现设备，进入手动连接模式';
+            });
+            connectionAttempted = true;
+            
+            // 连接失败，显示失败消息后进入应用
+            await Future.delayed(const Duration(milliseconds: 1000));
+            break;
+          } else if (status == AutoConnectStatus.connecting) {
+            setState(() {
+              _statusMessage = '正在连接到发现的设备...';
+            });
+          }
+          
+          // 如果仍在扫描，更新进度提示
+          if (status == AutoConnectStatus.scanning && waitTime % 2000 == 0) {
+            setState(() {
+              final dots = '.' * ((waitTime ~/ 2000) % 4);
+              _statusMessage = '正在搜索设备$dots';
+            });
+          }
+        }
+        
+        // 如果超时还没有连接成功，直接进入应用
+        if (!connectionAttempted) {
           setState(() {
-            _showStartupScreen = false;
-            _isInitializing = false;
+            _statusMessage = '搜索超时，进入手动连接模式';
           });
-        } else {
-          // 连接失败，显示失败消息后进入应用
-          setState(() {
-            _statusMessage = '自动连接失败，请手动连接';
-          });
-          await Future.delayed(const Duration(milliseconds: 1500));
-          setState(() {
-            _showStartupScreen = false;
-            _isInitializing = false;
-          });
+          await Future.delayed(const Duration(milliseconds: 1000));
         }
       } else {
-        // 没有历史连接，直接进入应用
-        LogService.instance.info('没有历史连接配置，直接进入应用', category: 'Startup');
+        // 自动连接服务启动失败（通常是权限问题）
+        LogService.instance.info('自动连接服务启动失败，直接进入应用', category: 'Startup');
         setState(() {
-          _statusMessage = '欢迎使用掌控者';
+          _statusMessage = '进入手动连接模式';
         });
         await Future.delayed(const Duration(milliseconds: 800));
-        setState(() {
-          _showStartupScreen = false;
-          _isInitializing = false;
-        });
       }
+      
+      // 最后进入主应用界面
+      setState(() {
+        _showStartupScreen = false;
+        _isInitializing = false;
+      });
+      
     } catch (e) {
       LogService.instance.error('启动序列异常: $e', category: 'Startup');
       // 出现异常时直接进入应用

@@ -8,6 +8,8 @@ import '../providers/connection_provider.dart';
 import '../providers/monitor_provider.dart';
 import '../services/socket_service.dart';
 import 'computer_status_screen.dart';
+import 'connect_screen.dart';
+import '../widgets/connection_quality_indicator.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -150,15 +152,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         elevation: 0,
         actions: [
           Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: const ConnectionQualityIndicator(),
+          ),
+          Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: Chip(
-              avatar: const Icon(Icons.circle, color: Colors.green, size: 12),
-              label: Text(
-                '已连接',
-                style: textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface),
+            child: GestureDetector(
+              onTap: () {
+                // 点击连接状态，进入连接管理界面
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ConnectScreen(),
+                  ),
+                );
+              },
+              child: Chip(
+                avatar: const Icon(Icons.circle, color: Colors.green, size: 12),
+                label: Text(
+                  '已连接',
+                  style: textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface),
+                ),
+                backgroundColor: theme.cardColor,
+                side: BorderSide(color: theme.dividerColor),
               ),
-              backgroundColor: theme.cardColor,
-              side: BorderSide(color: theme.dividerColor),
             ),
           )
         ],

@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 import '../models/connection_config.dart';
 import '../providers/connection_provider.dart';
 import '../services/socket_service.dart';
 import '../services/discovery_service.dart';
+import '../services/log_service.dart';
 
 class ConnectScreen extends ConsumerStatefulWidget {
   const ConnectScreen({super.key});
@@ -15,24 +17,48 @@ class ConnectScreen extends ConsumerStatefulWidget {
   ConsumerState<ConnectScreen> createState() => _ConnectScreenState();
 }
 
-class _ConnectScreenState extends ConsumerState<ConnectScreen> {
+class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _ipController = TextEditingController();
   final _portController = TextEditingController(text: '8080');
   final _passwordController = TextEditingController();
   final _uuid = const Uuid();
-  bool _showPermissionCard = true;
   
   // 设备发现相关状态
   final DiscoveryService _discoveryService = DiscoveryService();
   List<DiscoveredDevice> _discoveredDevices = [];
-  bool _isScanning = false;
+  bool _isRealTimeScanning = false;
+  bool _isConnecting = false;
   String? _scanError;
+  String? _connectingToDevice;
+  Timer? _realTimeScanTimer;
+  
+  // 权限和UI状态
+  bool _showPermissionCard = true;
+  bool _showManualForm = false;
+  
+  // 动画控制器
+  late AnimationController _slideController;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    
+    // 初始化动画
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeInOut,
+    ));
+    
     // 设置连接成功后的导航回调
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -45,61 +71,39 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             context.go('/');
           }
         });
+        
         // 检查权限状态，决定是否显示权限卡片
         _checkPermissionStatus();
+        
+        // 开始实时设备发现
+        _startRealTimeDiscovery();
       }
     });
   }
 
-  // 检查权限状态，决定是否显示权限卡片
-  Future<void> _checkPermissionStatus() async {
-    final status = await Permission.locationWhenInUse.status;
-    if (mounted) {
-      setState(() {
-        // 只有在权限被拒绝且用户没有手动关闭卡片时才显示
-        _showPermissionCard = (status == PermissionStatus.denied || status == PermissionStatus.permanentlyDenied);
-      });
-    }
-  }
-
   @override
   void dispose() {
+    _slideController.dispose();
+    _realTimeScanTimer?.cancel();
+    _discoveryService.stopDiscovery();
     _nameController.dispose();
     _ipController.dispose();
     _portController.dispose();
     _passwordController.dispose();
-    _discoveryService.dispose();
     super.dispose();
   }
 
-  Future<void> _connectToServer([ConnectionConfig? config]) async {
-    ConnectionConfig connectionConfig;
-    
-    if (config != null) {
-      // 使用已保存的配置连接
-      connectionConfig = config;
-    } else {
-      // 使用表单输入创建新配置
-      if (!_formKey.currentState!.validate()) return;
-      
-      connectionConfig = ConnectionConfig(
-        id: _uuid.v4(),
-        name: _nameController.text.trim(),
-        ipAddress: _ipController.text.trim(),
-        port: int.parse(_portController.text.trim()),
-        password: _passwordController.text.trim().isEmpty ? null : _passwordController.text.trim(),
-        lastConnected: DateTime.now(),
-        autoConnect: false,
-      );
-      
-      // 保存新配置
-      await ref.read(connectionConfigProvider.notifier).addConfig(connectionConfig);
+  // 检查权限状态
+  Future<void> _checkPermissionStatus() async {
+    final status = await Permission.locationWhenInUse.status;
+    if (mounted) {
+      setState(() {
+        _showPermissionCard = status != PermissionStatus.granted;
+      });
     }
-
-    // 执行连接
-    await ref.read(connectionManagerProvider.notifier).connect(connectionConfig);
   }
 
+  // 请求权限
   Future<void> _requestPermissions() async {
     final status = await Permission.locationWhenInUse.request();
     if (!mounted) return;
@@ -110,10 +114,13 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('权限已授予，自动发现功能已启用'),
+          content: Text('权限已授予，设备发现功能已启用'),
           backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
         ),
       );
+      // 权限获取后重新开始实时扫描
+      _startRealTimeDiscovery();
     } else if (status == PermissionStatus.permanentlyDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -122,65 +129,409 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             label: '打开设置',
             onPressed: () => openAppSettings(),
           ),
+          duration: const Duration(seconds: 4),
         ),
       );
     }
   }
 
-  // 手动扫描设备
-  Future<void> _scanForDevices() async {
-    if (_isScanning) return;
-
+  // 开始实时设备发现
+  void _startRealTimeDiscovery() async {
+    if (_isRealTimeScanning) return;
+    
     setState(() {
-      _isScanning = true;
+      _isRealTimeScanning = true;
       _scanError = null;
-      _discoveredDevices.clear();
     });
 
+    LogService.instance.info('开始实时设备发现', category: 'Connect');
+    
+    // 立即进行一次扫描
+    await _performSingleScan();
+    
+    // 启动定时器，每5秒扫描一次
+    _realTimeScanTimer = Timer.periodic(const Duration(seconds: 8), (timer) async {
+      if (mounted && _isRealTimeScanning) {
+        await _performSingleScan();
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  // 停止实时发现
+  void _stopRealTimeDiscovery() {
+    setState(() {
+      _isRealTimeScanning = false;
+    });
+    _realTimeScanTimer?.cancel();
+    LogService.instance.info('停止实时设备发现', category: 'Connect');
+  }
+
+  // 执行单次扫描
+  Future<void> _performSingleScan() async {
     try {
-      final devices = await _discoveryService.scanOnce(timeout: const Duration(seconds: 8));
+      final devices = await _discoveryService.scanOnce(timeout: const Duration(seconds: 4));
       if (!mounted) return;
-      if (!mounted) return;
+      
       setState(() {
         _discoveredDevices = devices;
-        _isScanning = false;
+        _scanError = devices.isEmpty ? '未发现设备，请确保PC端程序正在运行' : null;
       });
-
-      if (devices.isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _scanError = '未发现任何设备，请确保PC端程序正在运行';
-        });
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('发现 ${devices.length} 个设备'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      }
+      
+      LogService.instance.info('发现 ${devices.length} 个设备', category: 'Connect');
     } catch (e) {
       if (!mounted) return;
+      LogService.instance.warning('设备扫描失败: $e', category: 'Connect');
       setState(() {
-        _isScanning = false;
         _scanError = '扫描失败: $e';
       });
     }
   }
 
-  // 连接到发现的设备
-  Future<void> _connectToDiscoveredDevice(DiscoveredDevice device) async {
-    final config = device.toConnectionConfig();
-    await _connectToServer(config);
+  // 手动刷新设备列表
+  Future<void> _refreshDevices() async {
+    await _performSingleScan();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('发现 ${_discoveredDevices.length} 个设备'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
-  Widget _buildPermissionCard() {
-    if (!_showPermissionCard) return const SizedBox.shrink();
+  // 连接到发现的设备
+  Future<void> _connectToDiscoveredDevice(DiscoveredDevice device) async {
+    if (_isConnecting) return;
 
+    setState(() {
+      _isConnecting = true;
+      _connectingToDevice = device.hostName;
+    });
+
+    try {
+      final config = device.toConnectionConfig();
+      LogService.instance.info('尝试连接到发现的设备: ${device.hostName} (${device.ipAddress})', category: 'Connect');
+      
+      await ref.read(connectionManagerProvider.notifier).connect(config);
+      final result = ref.read(connectionManagerProvider);
+      
+      if (result.value == true) {
+        LogService.instance.info('连接成功: ${device.hostName}', category: 'Connect');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('已连接到 ${device.hostName}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('连接失败: ${device.hostName}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      LogService.instance.error('连接异常: $e', category: 'Connect');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('连接异常: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isConnecting = false;
+          _connectingToDevice = null;
+        });
+      }
+    }
+  }
+
+  // 手动连接
+  Future<void> _connectManually() async {
+    if (!_formKey.currentState!.validate() || _isConnecting) return;
+
+    setState(() {
+      _isConnecting = true;
+    });
+
+    try {
+      final config = ConnectionConfig(
+        id: _uuid.v4(),
+        name: _nameController.text.trim().isEmpty ? 
+              '${_ipController.text}:${_portController.text}' : 
+              _nameController.text.trim(),
+        ipAddress: _ipController.text.trim(),
+        port: int.parse(_portController.text.trim()),
+        password: _passwordController.text.trim().isEmpty ? null : _passwordController.text.trim(),
+        lastConnected: DateTime.now(),
+        autoConnect: true,
+      );
+
+      LogService.instance.info('尝试手动连接到: ${config.ipAddress}:${config.port}', category: 'Connect');
+      
+      await ref.read(connectionManagerProvider.notifier).connect(config);
+      final result = ref.read(connectionManagerProvider);
+      
+      if (result.value == true) {
+        LogService.instance.info('手动连接成功: ${config.name}', category: 'Connect');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('已连接到 ${config.name}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // 收起手动输入表单
+          _toggleManualForm();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('连接失败: ${config.name}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      LogService.instance.error('手动连接异常: $e', category: 'Connect');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('连接异常: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isConnecting = false;
+        });
+      }
+    }
+  }
+
+  // 断开当前连接
+  Future<void> _disconnect() async {
+    try {
+      await ref.read(connectionManagerProvider.notifier).disconnect();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('已断开连接'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      LogService.instance.error('断开连接失败: $e', category: 'Connect');
+    }
+  }
+
+  // 切换手动输入表单显示状态
+  void _toggleManualForm() {
+    setState(() {
+      _showManualForm = !_showManualForm;
+    });
+    
+    if (_showManualForm) {
+      _slideController.forward();
+    } else {
+      _slideController.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final connectionStatus = ref.watch(connectionStatusProvider);
+    final currentConnection = ref.watch(currentConnectionProvider);
+    final theme = Theme.of(context);
+    
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      appBar: AppBar(
+        title: const Text('连接管理'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          // 实时扫描开关
+          IconButton(
+            icon: Icon(
+              _isRealTimeScanning ? Icons.pause : Icons.play_arrow,
+              color: _isRealTimeScanning ? Colors.green : null,
+            ),
+            onPressed: () {
+              if (_isRealTimeScanning) {
+                _stopRealTimeDiscovery();
+              } else {
+                _startRealTimeDiscovery();
+              }
+            },
+            tooltip: _isRealTimeScanning ? '停止实时发现' : '开始实时发现',
+          ),
+          // 手动刷新
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshDevices,
+            tooltip: '刷新设备列表',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // 权限提示卡片
+          if (_showPermissionCard) _buildPermissionCard(),
+          
+          // 当前连接状态
+          if (connectionStatus == ConnectionStatus.connected) _buildCurrentConnectionCard(currentConnection),
+          
+          // 设备发现区域
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: [
+                _buildDiscoverySection(),
+                const SizedBox(height: 16),
+                _buildHistorySection(),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _toggleManualForm,
+        icon: Icon(_showManualForm ? Icons.close : Icons.add),
+        label: Text(_showManualForm ? '取消' : '手动添加'),
+        backgroundColor: _showManualForm ? Colors.grey : theme.colorScheme.primary,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomSheet: _showManualForm ? _buildManualConnectSheet() : null,
+    );
+  }
+
+  // 构建权限提示卡片
+  Widget _buildPermissionCard() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      child: Card(
+        color: Colors.orange.shade50,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.location_on, color: Colors.orange.shade700),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '需要位置权限以发现设备',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => _showPermissionCard = false),
+                    icon: const Icon(Icons.close, size: 20),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text('自动发现局域网设备需要位置权限。如果不授予权限，您仍可使用手动连接功能。'),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => setState(() => _showPermissionCard = false),
+                    child: const Text('跳过'),
+                  ),
+                  FilledButton(
+                    onPressed: _requestPermissions,
+                    child: const Text('授予权限'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 构建当前连接状态卡片
+  Widget _buildCurrentConnectionCard(ConnectionConfig? connection) {
+    if (connection == null) return const SizedBox.shrink();
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Card(
+        color: Colors.green.shade50,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.computer, color: Colors.green),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      connection.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    Text(
+                      '${connection.ipAddress}:${connection.port}',
+                      style: TextStyle(
+                        color: Colors.green.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: _disconnect,
+                child: const Text('断开'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 构建设备发现区域
+  Widget _buildDiscoverySection() {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -189,707 +540,398 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
             Row(
               children: [
                 Icon(
-                  Icons.info_outline,
-                  color: Theme.of(context).colorScheme.primary,
+                  Icons.radar,
+                  color: _isRealTimeScanning ? Colors.green : Colors.grey,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '自动发现功能',
+                  '发现的设备',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Spacer(),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _showPermissionCard = false;
-                    });
-                  },
-                  icon: const Icon(Icons.close, size: 20),
-                ),
+                if (_isRealTimeScanning)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
               ],
             ),
-            const SizedBox(height: 8),
-            const Text(
-              '应用可以自动发现局域网内的PC设备。此功能需要位置权限来进行网络扫描。如果您不授予权限，仍可使用手动连接功能。',
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _showPermissionCard = false;
-                    });
-                  },
-                  child: const Text('稍后再说'),
+            const SizedBox(height: 16),
+            
+            if (_discoveredDevices.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.devices_other,
+                      size: 48,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _scanError ?? '正在搜索设备...',
+                      style: TextStyle(color: Colors.grey.shade600),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: _requestPermissions,
-                  child: const Text('授予权限'),
-                ),
-              ],
-            ),
+              )
+            else
+              ...(_discoveredDevices.map((device) => _buildDeviceCard(device)).toList()),
           ],
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final connectionStatus = ref.watch(connectionStatusProvider);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('连接管理'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          // 连接状态指示器
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _getStatusIcon(connectionStatus),
-                  color: _getStatusColor(connectionStatus),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _getStatusText(connectionStatus),
-                  style: TextStyle(
-                    color: _getStatusColor(connectionStatus),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      body: _buildSmartConnectionView(context),
-    );
-  }
-
-  /// 智能连接界面
-  Widget _buildSmartConnectionView(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        // 头部标题
-        SliverToBoxAdapter(
-          child: _buildConnectionHeader(context),
-        ),
-        
-        // 权限卡片
-        SliverToBoxAdapter(
-          child: _buildPermissionCard(),
-        ),
-        
-        // 设备发现区域
-        SliverToBoxAdapter(
-          child: _buildDeviceDiscoverySection(context),
-        ),
-        
-        // 手动连接表单
-        SliverToBoxAdapter(
-          child: _buildManualConnectionForm(context),
-        ),
-        
-        // 连接历史
-        SliverToBoxAdapter(
-          child: _buildConnectionHistory(context),
-        ),
-        
-        // 底部间距
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 100),
-        ),
-      ],
-    );
-  }
-
-  /// 连接头部
-  Widget _buildConnectionHeader(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.green.withAlpha((0.1 * 255).round()),
-            Colors.orange.withAlpha((0.05 * 255).round()),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.green.withAlpha((0.2 * 255).round()),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          // 连接图标
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.green.withAlpha((0.1 * 255).round()),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.wifi_rounded,
-              color: Colors.green,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
-          
-          // 标题和描述
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '智能连接',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '自动发现和连接您的Windows PC',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withAlpha((0.7 * 255).round()),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 设备发现区域
-  Widget _buildDeviceDiscoverySection(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.green.withAlpha((0.2 * 255).round()),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.withAlpha((0.1 * 255).round()),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.radar_rounded,
-                color: Colors.green,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '自动发现',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
-              ),
-              const Spacer(),
-              if (_isScanning)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                FilledButton.icon(
-                  onPressed: _scanForDevices,
-                  icon: const Icon(Icons.search_rounded, size: 16),
-                  label: const Text('扫描设备'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // 发现的设备列表
-          if (_discoveredDevices.isNotEmpty)
-            ...(_discoveredDevices.map((device) => _buildDiscoveredDeviceCard(device)).toList())
-          else if (_scanError != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.red.withAlpha((0.1 * 255).round()),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.withAlpha((0.2 * 255).round())),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, color: Colors.red, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _scanError!,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else if (!_isScanning)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.withAlpha((0.1 * 255).round()),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withAlpha((0.2 * 255).round())),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.grey, size: 20),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      '点击"扫描设备"自动发现网络中的PC',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-    /// 手动连接表单
-  Widget _buildManualConnectionForm(BuildContext context) {
-    final connectionManager = ref.watch(connectionManagerProvider);
+  // 构建设备卡片
+  Widget _buildDeviceCard(DiscoveredDevice device) {
+    final isConnecting = _isConnecting && _connectingToDevice == device.hostName;
     
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.orange.withAlpha((0.2 * 255).round()),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.orange.withAlpha((0.1 * 255).round()),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Card(
+        elevation: 0,
+        color: Colors.blue.shade50,
+        child: InkWell(
+          onTap: isConnecting ? null : () => _connectToDiscoveredDevice(device),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.computer, color: Colors.blue),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        device.hostName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Text(
+                        '${device.ipAddress}:${device.port}',
+                        style: TextStyle(
+                          color: Colors.blue.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isConnecting)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.blue),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
-      child: Form(
-        key: _formKey,
+    );
+  }
+
+  // 构建历史连接区域
+  Widget _buildHistorySection() {
+    final configs = ref.watch(connectionConfigProvider);
+    
+    if (configs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.input_rounded,
-                  color: Colors.orange,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '手动连接',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
+            Text(
+              '历史连接',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 16),
-            
-            // 连接名称
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: '连接名称',
-                hintText: '例如：我的电脑',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '请输入连接名称';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            
-            // IP地址
-            TextFormField(
-              controller: _ipController,
-              decoration: InputDecoration(
-                labelText: 'IP地址',
-                hintText: '例如：192.168.1.100',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return '请输入IP地址';
-                }
-                final ipRegex = RegExp(r'^(\d{1,3}\.){3}\d{1,3}$');
-                if (!ipRegex.hasMatch(value.trim())) {
-                  return '请输入有效的IP地址';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            
-            // 端口和密码
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _portController,
-                    decoration: InputDecoration(
-                      labelText: '端口',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return '请输入端口';
-                      }
-                      final port = int.tryParse(value.trim());
-                      if (port == null || port < 1 || port > 65535) {
-                        return '请输入有效的端口 (1-65535)';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: '密码 (可选)',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    obscureText: true,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            
-            // 连接按钮
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: connectionManager.isLoading ? null : () => _connectToServer(),
-                icon: connectionManager.isLoading 
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.link_rounded),
-                label: Text(connectionManager.isLoading ? '连接中...' : '连接'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
-            ),
-            
-            // 连接错误显示
-            if (connectionManager.hasError)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withAlpha((0.1 * 255).round()),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withAlpha((0.2 * 255).round())),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red, size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '连接失败: ${connectionManager.error}',
-                          style: const TextStyle(color: Colors.red, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            ...configs.take(5).map((config) => _buildHistoryCard(config)).toList(),
           ],
         ),
       ),
     );
   }
 
-  /// 连接历史
-  Widget _buildConnectionHistory(BuildContext context) {
-    final connectionConfigs = ref.watch(connectionConfigProvider);
-    final connectionManager = ref.watch(connectionManagerProvider);
-    
+  // 构建历史连接卡片
+  Widget _buildHistoryCard(ConnectionConfig config) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.blue.withAlpha((0.2 * 255).round()),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withAlpha((0.1 * 255).round()),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.history_rounded,
-                color: Colors.blue,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '连接历史',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Card(
+        elevation: 0,
+        color: Colors.grey.shade50,
+        child: InkWell(
+          onTap: _isConnecting ? null : () => _connectToHistoryConfig(config),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.history, color: Colors.grey),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // 历史记录列表
-          if (connectionConfigs.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.withAlpha((0.1 * 255).round()),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.grey, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '暂无连接历史，添加新连接开始使用',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Column(
-              children: connectionConfigs.map((config) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.5 * 255).round()),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withAlpha((0.2 * 255).round()),
-                  ),
-                ),
-                child: ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withAlpha((0.1 * 255).round()),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.computer, color: Colors.blue, size: 20),
-                  ),
-                  title: Text(
-                    config.name,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text('${config.ipAddress}:${config.port}'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20),
-                        onPressed: () async {
-                          final confirmed = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('删除连接'),
-                              content: Text('确定要删除连接 "${config.name}" 吗？'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(false),
-                                  child: const Text('取消'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(true),
-                                  child: const Text('删除'),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirmed == true) {
-                            await ref.read(connectionConfigProvider.notifier).removeConfig(config.id);
-                          }
-                        },
+                      Text(
+                        config.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      FilledButton.icon(
-                        onPressed: connectionManager.isLoading ? null : () => _connectToServer(config),
-                        icon: const Icon(Icons.link_rounded, size: 16),
-                        label: const Text('连接'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      Text(
+                        '${config.ipAddress}:${config.port}',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
                 ),
-              )).toList(),
+                const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
 
-  /// 发现的设备卡片
-  Widget _buildDiscoveredDeviceCard(DiscoveredDevice device) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.green.withAlpha((0.05 * 255).round()),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withAlpha((0.2 * 255).round())),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.green.withAlpha((0.1 * 255).round()),
-              borderRadius: BorderRadius.circular(8),
+  // 连接到历史配置
+  Future<void> _connectToHistoryConfig(ConnectionConfig config) async {
+    if (_isConnecting) return;
+
+    setState(() {
+      _isConnecting = true;
+    });
+
+    try {
+      LogService.instance.info('尝试连接到历史配置: ${config.name}', category: 'Connect');
+      
+      await ref.read(connectionManagerProvider.notifier).connect(config);
+      final result = ref.read(connectionManagerProvider);
+      
+      if (result.value == true) {
+        LogService.instance.info('连接成功: ${config.name}', category: 'Connect');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('已连接到 ${config.name}'),
+              backgroundColor: Colors.green,
             ),
-            child: const Icon(Icons.computer, color: Colors.green, size: 20),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('连接失败: ${config.name}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      LogService.instance.error('连接历史配置异常: $e', category: 'Connect');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('连接异常: $e'),
+            backgroundColor: Colors.red,
           ),
-          const SizedBox(width: 12),
-          Expanded(
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isConnecting = false;
+        });
+      }
+    }
+  }
+
+  // 构建手动连接表单
+  Widget _buildManualConnectSheet() {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                   device.hostName,
-                   style: const TextStyle(
-                     fontWeight: FontWeight.bold,
-                     color: Colors.green,
-                   ),
-                 ),
-                Text(
-                  '${device.ipAddress}:${device.port}',
-                  style: TextStyle(
-                    color: Colors.green.shade600,
-                    fontSize: 12,
+                Row(
+                  children: [
+                    const Icon(Icons.add_circle_outline),
+                    const SizedBox(width: 8),
+                    Text(
+                      '手动添加设备',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: '设备名称（可选）',
+                    hintText: '例如：办公室电脑',
+                    prefixIcon: Icon(Icons.label_outline),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextFormField(
+                        controller: _ipController,
+                        decoration: const InputDecoration(
+                          labelText: 'IP地址',
+                          hintText: '192.168.1.100',
+                          prefixIcon: Icon(Icons.computer),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'IP地址不能为空';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 1,
+                      child: TextFormField(
+                        controller: _portController,
+                        decoration: const InputDecoration(
+                          labelText: '端口',
+                          prefixIcon: Icon(Icons.numbers),
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return '端口不能为空';
+                          }
+                          final port = int.tryParse(value.trim());
+                          if (port == null || port < 1 || port > 65535) {
+                            return '无效端口';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(
+                    labelText: '密码（可选）',
+                    hintText: '如果服务器设置了密码',
+                    prefixIcon: Icon(Icons.lock_outline),
+                  ),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 32),
+                
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _isConnecting ? null : _connectManually,
+                    child: _isConnecting
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              SizedBox(width: 8),
+                              Text('连接中...'),
+                            ],
+                          )
+                        : const Text('连接'),
                   ),
                 ),
               ],
             ),
           ),
-          FilledButton.icon(
-            onPressed: () => _connectToDiscoveredDevice(device),
-            icon: const Icon(Icons.link_rounded, size: 16),
-            label: const Text('连接'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.green,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  IconData _getStatusIcon(ConnectionStatus status) {
-    switch (status) {
-      case ConnectionStatus.connected:
-        return Icons.wifi;
-      case ConnectionStatus.connecting:
-        return Icons.wifi_tethering;
-      case ConnectionStatus.disconnected:
-        return Icons.wifi_off;
-      case ConnectionStatus.error:
-        return Icons.wifi_off;
+  // 输入验证方法
+  String? _validateRequired(String? value, String fieldName) {
+    if (value == null || value.trim().isEmpty) {
+      return '$fieldName不能为空';
     }
+    return null;
   }
 
-  Color _getStatusColor(ConnectionStatus status) {
-    switch (status) {
-      case ConnectionStatus.connected:
-        return Colors.green;
-      case ConnectionStatus.connecting:
-        return Colors.orange;
-      case ConnectionStatus.disconnected:
-        return Colors.grey;
-      case ConnectionStatus.error:
-        return Colors.red;
+  String? _validatePort(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '端口不能为空';
     }
-  }
-
-  String _getStatusText(ConnectionStatus status) {
-    switch (status) {
-      case ConnectionStatus.connected:
-        return '已连接';
-      case ConnectionStatus.connecting:
-        return '连接中';
-      case ConnectionStatus.disconnected:
-        return '未连接';
-      case ConnectionStatus.error:
-        return '连接错误';
+    final port = int.tryParse(value.trim());
+    if (port == null || port < 1 || port > 65535) {
+      return '端口必须是1-65535之间的数字';
     }
+    return null;
   }
 } 
 
