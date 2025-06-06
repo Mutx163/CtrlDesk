@@ -1,18 +1,66 @@
 ﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../screens/control_screen.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../screens/dashboard_screen.dart';
 import '../screens/touchpad_screen.dart';
-import '../screens/keyboard_screen.dart';
-import '../screens/screenshot_screen.dart';
-import '../screens/monitor_screen.dart';
-import '../screens/tools_screen.dart';
-
-import '../screens/connect_screen.dart';
+import '../screens/files_screen.dart';
+import '../screens/control_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/connect_screen.dart';
 import '../providers/connection_provider.dart';
 import '../services/socket_service.dart';
-import 'bottom_navigation_bar.dart';
+
+// 简单实现一个新的BottomNavBar，后续可以替换为原来的文件
+class BottomNavigationBarWidget extends ConsumerWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const BottomNavigationBarWidget({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final connectionStatus = ref.watch(connectionStatusProvider);
+
+    final items = connectionStatus == ConnectionStatus.connected
+        ? _buildConnectedItems(context)
+        : _buildDisconnectedItems(context);
+
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: onTap,
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: theme.colorScheme.surface,
+      selectedItemColor: theme.colorScheme.primary,
+      unselectedItemColor: Colors.grey,
+      elevation: 0,
+      items: items,
+    );
+  }
+
+  List<BottomNavigationBarItem> _buildConnectedItems(BuildContext context) {
+    return const [
+      BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: '主页'),
+      BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.handPointer), label: '触控板'),
+      BottomNavigationBarItem(icon: Icon(Icons.folder_open_rounded), label: '文件'),
+      BottomNavigationBarItem(icon: Icon(Icons.music_note_rounded), label: '媒体'),
+      BottomNavigationBarItem(icon: Icon(Icons.settings_rounded), label: '设置'),
+    ];
+  }
+
+  List<BottomNavigationBarItem> _buildDisconnectedItems(BuildContext context) {
+    return const [
+      BottomNavigationBarItem(icon: Icon(Icons.link_rounded), label: '连接'),
+      BottomNavigationBarItem(icon: Icon(Icons.settings_rounded), label: '设置'),
+    ];
+  }
+}
+
 
 class MainScaffold extends ConsumerStatefulWidget {
   final int pageIndex;
@@ -33,25 +81,39 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   @override
   void initState() {
     super.initState();
-    // 验证 initialPage 不超过当前页面列表长度，防止深链接时的 RangeError
-    _currentPageIndex = math.min(
-      widget.pageIndex,
-      _getPagesForConnectionStatus(ref.read(connectionStatusProvider)).length - 1,
-    );
-    _pageController = PageController(initialPage: _currentPageIndex);
+    _updateAndInitializeController();
   }
+  
+  void _updateAndInitializeController() {
+    final pages = _getPagesForConnectionStatus(ref.read(connectionStatusProvider));
+    // 确保初始索引在合法范围内
+    int initialPage = math.min(widget.pageIndex, pages.length - 1);
+    
+    // 如果当前索引也超出了范围（可能在状态改变后发生），重置它
+    if (_currentPageIndex >= pages.length) {
+       _currentPageIndex = 0;
+       initialPage = 0;
+    } else {
+       _currentPageIndex = initialPage;
+    }
+
+    _pageController = PageController(initialPage: initialPage);
+  }
+
 
   @override
   void didUpdateWidget(MainScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 当外部传入的pageIndex发生变化时，更新PageView
     if (widget.pageIndex != oldWidget.pageIndex) {
-      _currentPageIndex = widget.pageIndex;
-      _pageController.animateToPage(
-        _currentPageIndex,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      final pages = _getPagesForConnectionStatus(ref.read(connectionStatusProvider));
+      if (widget.pageIndex < pages.length) {
+        _currentPageIndex = widget.pageIndex;
+        _pageController.animateToPage(
+          _currentPageIndex,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
     }
   }
 
@@ -61,67 +123,61 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
     super.dispose();
   }
 
+  void _onItemTapped(int index) {
+    _pageController.jumpToPage(index);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final connectionStatus = ref.watch(connectionStatusProvider);
-    
-    // 同步导航索引
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(navigationIndexProvider.notifier).state = _currentPageIndex;
+    ref.listen<ConnectionStatus>(connectionStatusProvider, (previous, next) {
+      if (previous != next) {
+        // 连接状态发生变化，我们需要重新构建PageView并确保索引安全
+        // 关键：在下一次build之前，就要准备好新的controller和索引
+        setState(() {
+          _updateAndInitializeController();
+        });
+      }
     });
 
-    return ProviderScope(
-      overrides: [
-        pageControllerProvider.overrideWithValue(_pageController),
-      ],
-      child: Scaffold(
-        body: PageView(
-          controller: _pageController,
-          onPageChanged: (index) {
-            setState(() {
-              _currentPageIndex = index;
-            });
-            
-            // 更新导航索引
-            ref.read(navigationIndexProvider.notifier).state = index;
-            
-            // 更新路由（但不影响当前页面显示）
-            _updateRouteForIndex(index, connectionStatus);
-          },
-          children: _getPagesForConnectionStatus(connectionStatus),
-        ),
-        bottomNavigationBar: const BottomNavigationBarWidget(),
+    final pages = _getPagesForConnectionStatus(ref.watch(connectionStatusProvider));
+    
+    // 再次进行安全检查，作为最后一道防线
+    if (_currentPageIndex >= pages.length) {
+      _currentPageIndex = 0;
+    }
+
+    return Scaffold(
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentPageIndex = index;
+          });
+          // 可以在这里更新路由，如果需要的话
+        },
+        children: pages,
+      ),
+      bottomNavigationBar: BottomNavigationBarWidget(
+        currentIndex: _currentPageIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
 
-  /// 根据连接状态获取页面列表
   List<Widget> _getPagesForConnectionStatus(ConnectionStatus connectionStatus) {
     if (connectionStatus == ConnectionStatus.connected) {
-      // 已连接状态：6个页面（媒体、触摸、键盘、截图、监控、工具）
       return [
-        const ControlScreen(),      // 0 - 媒体控制
-        const TouchpadScreen(),     // 1 - 触摸板
-        const KeyboardScreen(),     // 2 - 键盘
-        const ScreenshotScreen(),   // 3 - 截图
-        const MonitorScreen(),      // 4 - 监控
-        const ToolsScreen(),        // 5 - 工具
+        const DashboardScreen(),    // 0 - 主页
+        const TouchpadScreen(),     // 1 - 触控板
+        const FilesScreen(),        // 2 - 文件
+        const ControlScreen(),      // 3 - 媒体
+        const SettingsScreen(),     // 4 - 设置
       ];
     } else {
-      // 未连接状态：2个页面（连接、设置）
       return [
-        const ConnectScreen(),      // 0 - 智能连接
-        const SettingsScreen(),     // 1 - 应用设置
+        const ConnectScreen(),      // 0 - 连接
+        const SettingsScreen(),     // 1 - 设置
       ];
     }
   }
-
-  /// 更新路由以保持URL同步（暂时禁用以避免重复构建）
-  void _updateRouteForIndex(int index, ConnectionStatus connectionStatus) {
-    // TODO: 路由历史记录更新功能
-    // 暂时注释掉以避免重复构建页面
-    // 可以在未来版本中根据需要启用
-  }
-
-
 } 

@@ -5,6 +5,15 @@ import 'screens/settings_screen.dart';
 import 'widgets/main_scaffold.dart';
 import 'services/log_service.dart';
 import 'widgets/startup_widget.dart';
+import 'screens/connect_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/touchpad_screen.dart';
+import 'screens/files_screen.dart';
+import 'screens/control_screen.dart';
+
+// 私有全局变量
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -281,83 +290,66 @@ class PalmControllerApp extends ConsumerWidget {
   }
 }
 
-// 路由配置
 final GoRouter _router = GoRouter(
-  initialLocation: '/control',
+  initialLocation: '/dashboard',
+  navigatorKey: _rootNavigatorKey,
   routes: [
-    GoRoute(
-      path: '/control',
-      name: 'control',
-      builder: (context, state) => const MainScaffold(pageIndex: 0),
-    ),
-    GoRoute(
-      path: '/touchpad',
-      name: 'touchpad', 
-      builder: (context, state) => const MainScaffold(pageIndex: 1),
-    ),
-    GoRoute(
-      path: '/keyboard',
-      name: 'keyboard',
-      builder: (context, state) => const MainScaffold(pageIndex: 2),
-    ),
-    GoRoute(
-      path: '/screenshot',
-      name: 'screenshot',
-      builder: (context, state) => const MainScaffold(pageIndex: 3),
-    ),
-    GoRoute(
-      path: '/monitor',
-      name: 'monitor',
-      builder: (context, state) => const MainScaffold(pageIndex: 4),
-    ),
-    GoRoute(
-      path: '/tools',
-      name: 'tools',
-      builder: (context, state) => const MainScaffold(pageIndex: 5),
-    ),
-    GoRoute(
-      path: '/connect',
-      name: 'connect',
-      builder: (context, state) => const MainScaffold(pageIndex: 0),
-    ),
-    // 设置页面独立，不包含底部导航栏
-    GoRoute(
-      path: '/settings',
-      name: 'settings',
-      builder: (context, state) => const SettingsScreen(),
+    // 主应用路由
+    ShellRoute(
+      navigatorKey: _shellNavigatorKey,
+      builder: (context, state, child) {
+        // 从路径中解析页面索引
+        final pageIndex = _pageIndexFromPath(state.uri.path);
+        return MainScaffold(pageIndex: pageIndex, key: state.pageKey);
+      },
+      routes: [
+        // 已连接状态下的路由
+        GoRoute(
+          path: '/dashboard',
+          pageBuilder: (context, state) => const NoTransitionPage(child: DashboardScreen()),
+        ),
+        GoRoute(
+          path: '/touchpad',
+          pageBuilder: (context, state) => const NoTransitionPage(child: TouchpadScreen()),
+        ),
+        GoRoute(
+          path: '/files',
+          pageBuilder: (context, state) => const NoTransitionPage(child: FilesScreen()),
+        ),
+        GoRoute(
+          path: '/media',
+          pageBuilder: (context, state) => const NoTransitionPage(child: ControlScreen()),
+        ),
+        GoRoute(
+          path: '/settings',
+          pageBuilder: (context, state) => const NoTransitionPage(child: SettingsScreen()),
+        ),
+        // 未连接状态下的路由
+        GoRoute(
+          path: '/connect',
+          pageBuilder: (context, state) => const NoTransitionPage(child: ConnectScreen()),
+        ),
+      ],
     ),
   ],
-  errorBuilder: (context, state) => Scaffold(
-    appBar: AppBar(
-      title: const Text('页面未找到'),
-    ),
-    body: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.grey,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            '页面未找到',
-            style: TextStyle(fontSize: 18),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '无法找到路径: ${state.uri}',
-            style: const TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: () => context.go('/control'),
-            child: const Text('返回主页'),
-          ),
-        ],
-      ),
-    ),
-  ),
 );
+
+// 从路径获取页面索引
+int _pageIndexFromPath(String path) {
+  switch (path) {
+    case '/touchpad':
+      return 1;
+    case '/files':
+      return 2;
+    case '/media':
+      return 3;
+    case '/settings':
+      return 4;
+    case '/connect':
+      return 0; // or 1 depending on disconnected state
+    case '/dashboard':
+    default:
+      return 0;
+  }
+}
 
