@@ -166,6 +166,63 @@ final volumeStateProvider =
   return VolumeStateNotifier(ref); // Pass the Ref object directly
 });
 
+// 新增：媒体状态数据模型
+class MediaStatus {
+  final String? title;
+  final String? artist;
+  final bool isPlaying;
+  final String? artworkUrl; // 专辑封面URL
+
+  MediaStatus({
+    this.title,
+    this.artist,
+    this.isPlaying = false,
+    this.artworkUrl,
+  });
+
+  MediaStatus copyWith({
+    String? title,
+    String? artist,
+    bool? isPlaying,
+    String? artworkUrl,
+  }) {
+    return MediaStatus(
+      title: title ?? this.title,
+      artist: artist ?? this.artist,
+      isPlaying: isPlaying ?? this.isPlaying,
+      artworkUrl: artworkUrl ?? this.artworkUrl,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'MediaStatus(title: $title, artist: $artist, isPlaying: $isPlaying)';
+  }
+}
+
+// 新增：系统信息数据模型
+class SystemInfo {
+  final double cpuUsage;
+  final double memoryUsage;
+
+  SystemInfo({this.cpuUsage = 0.0, this.memoryUsage = 0.0});
+
+  SystemInfo copyWith({
+    double? cpuUsage,
+    double? memoryUsage,
+  }) {
+    return SystemInfo(
+      cpuUsage: cpuUsage ?? this.cpuUsage,
+      memoryUsage: memoryUsage ?? this.memoryUsage,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'SystemInfo(cpuUsage: $cpuUsage, memoryUsage: $memoryUsage)';
+  }
+}
+
 // 音量状态管理器
 class VolumeStateNotifier extends StateNotifier<VolumeState> {
   final Ref _ref; // Store the Ref object
@@ -210,22 +267,16 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
   }
 
   void _handleVolumeStatusMessage(ControlMessage message) {
-    // LogService.instance.debug('Handling volume_status message: ${message.payload}', category: 'VolumeState'); // Kept commented
     try {
-      // 确保从消息中获取到有效的音量值
       if (message.payload['volume'] != null) {
         final newVolume = (message.payload['volume'] as num).toDouble();
         final newMuteState = message.payload['muted'] as bool? ?? false;
         if (mounted) {
           state = state.copyWith(volume: newVolume, isMuted: newMuteState);
-          // LogService.instance.info('Volume state updated: ${newVolume * 100}%, Muted: $newMuteState', category: 'VolumeState');
         }
-      } else {
-        // LogService.instance.warning('Received volume_status with null volume. Ignoring.', category: 'VolumeState'); // Kept commented
       }
     } catch (e) {
-      // LogService.instance.error('Error parsing volume_status: $e', category: 'VolumeState'); // Kept commented
-      // 解析失败时不改变当前状态，保持用户可以继续操作
+      LogService.instance.error('Error parsing volume_status: $e', category: 'VolumeState');
     }
   }
 
@@ -237,7 +288,6 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
         action: 'get_volume_status',
       );
       await socketService.sendMessage(requestMessage);
-      // LogService.instance.debug('Requested volume status from server', category: 'VolumeState');
     } else {
       // 未连接时保持未知状态
       if (mounted) {
@@ -266,6 +316,107 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
   void dispose() {
     _messageSubscription?.cancel();
     _connectionStatusSubscription?.cancel();
+    super.dispose();
+  }
+}
+
+// 新增：媒体状态Provider
+final mediaStatusProvider = StateNotifierProvider<MediaStatusNotifier, MediaStatus>((ref) {
+  return MediaStatusNotifier(ref);
+});
+
+// 新增：系统信息Provider
+final systemInfoProvider = StateNotifierProvider<SystemInfoNotifier, SystemInfo>((ref) {
+  return SystemInfoNotifier(ref);
+});
+
+// 新增：媒体状态管理器
+class MediaStatusNotifier extends StateNotifier<MediaStatus> {
+  final Ref _ref;
+  StreamSubscription? _messageSubscription;
+
+  MediaStatusNotifier(this._ref) : super(MediaStatus()) {
+    _subscribeToMessages();
+  }
+
+  void _subscribeToMessages() {
+    final socketService = _ref.read(socketServiceProvider);
+    _messageSubscription = socketService.messageStream.listen((message) {
+      if (message.type == 'media_status') {
+        _handleMediaStatusMessage(message);
+      }
+    });
+  }
+
+  void _handleMediaStatusMessage(ControlMessage message) {
+    try {
+      if (mounted) {
+        state = state.copyWith(
+          title: message.payload['title'],
+          artist: message.payload['artist'],
+          isPlaying: message.payload['isPlaying'],
+          artworkUrl: message.payload['artworkUrl'],
+        );
+      }
+    } catch (e) {
+      LogService.instance.error('Error parsing media_status: $e', category: 'MediaState');
+    }
+  }
+
+  @override
+  void dispose() {
+    _messageSubscription?.cancel();
+    super.dispose();
+  }
+}
+
+// 新增：系统信息管理器
+class SystemInfoNotifier extends StateNotifier<SystemInfo> {
+  final Ref _ref;
+  StreamSubscription? _messageSubscription;
+
+  SystemInfoNotifier(this._ref) : super(SystemInfo()) {
+    _subscribeToMessages();
+    _requestSystemInfo(); // 初始请求
+  }
+
+  void _subscribeToMessages() {
+    final socketService = _ref.read(socketServiceProvider);
+    _messageSubscription = socketService.messageStream.listen((message) {
+      if (message.type == 'system_info') {
+        _handleSystemInfoMessage(message);
+      }
+    });
+  }
+
+  void _handleSystemInfoMessage(ControlMessage message) {
+    try {
+      if (mounted) {
+        state = state.copyWith(
+          cpuUsage: (message.payload['cpuUsage'] as num?)?.toDouble() ?? 0.0,
+          memoryUsage: (message.payload['memoryUsage'] as num?)?.toDouble() ?? 0.0,
+        );
+      }
+    } catch (e) {
+      LogService.instance.error('Error parsing system_info: $e', category: 'SystemInfoState');
+    }
+  }
+
+  void _requestSystemInfo() {
+    // This could be sent periodically or on demand
+    final socketService = _ref.read(socketServiceProvider);
+    if (socketService.currentStatus == ConnectionStatus.connected) {
+      final requestMessage = ControlMessage.systemControl(
+        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+        action: 'get_system_info',
+      );
+      socketService.sendMessage(requestMessage);
+    }
+  }
+
+  @override
+  void dispose() {
+    _messageSubscription?.cancel();
     super.dispose();
   }
 }

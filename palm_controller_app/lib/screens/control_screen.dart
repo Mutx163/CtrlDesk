@@ -2,11 +2,11 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
- import '../providers/connection_provider.dart';
- import '../services/socket_service.dart';
- import '../models/control_message.dart';
- import 'dart:async'; // 添加Timer支持
-
+import '../models/connection_config.dart';
+import '../providers/connection_provider.dart';
+import '../services/socket_service.dart';
+import '../models/control_message.dart';
+import 'dart:async'; // 添加Timer支持
 
 class ControlScreen extends ConsumerStatefulWidget {
   const ControlScreen({super.key});
@@ -140,7 +140,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   }
 
   /// 媒体控制中心界面 - 优化的媒体控制体验
-  Widget _buildMediaControlCenter(BuildContext context, dynamic currentConnection) {
+  Widget _buildMediaControlCenter(BuildContext context, ConnectionConfig? currentConnection) {
     return CustomScrollView(
       slivers: [
         // 顶部连接状态
@@ -182,7 +182,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   }
 
   /// 连接状态头部
-  Widget _buildConnectionHeader(BuildContext context, dynamic currentConnection) {
+  Widget _buildConnectionHeader(BuildContext context, ConnectionConfig? currentConnection) {
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(16),
@@ -191,13 +191,13 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFE91E63).withOpacity(0.1),
-            const Color(0xFFE91E63).withOpacity(0.05),
+            const Color(0xFFE91E63).withAlpha((0.1 * 255).round()),
+            const Color(0xFFE91E63).withAlpha((0.05 * 255).round()),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
+          color: const Color(0xFFE91E63).withAlpha((0.2 * 255).round()),
           width: 1,
         ),
       ),
@@ -207,7 +207,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFE91E63).withOpacity(0.1),
+              color: const Color(0xFFE91E63).withAlpha((0.1 * 255).round()),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -245,7 +245,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
                     Text(
                       currentConnection?.name ?? 'Windows PC',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha((0.7 * 255).round()),
                       ),
                     ),
                   ],
@@ -260,1040 +260,466 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
 
   /// 当前播放信息卡片
   Widget _buildNowPlayingCard(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+    final mediaStatus = ref.watch(mediaStatusProvider);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      elevation: 8,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
+      shadowColor: Theme.of(context).colorScheme.primary.withAlpha((0.2 * 255).round()),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).colorScheme.primary.withAlpha((0.1 * 255).round()),
+              Theme.of(context).colorScheme.primary.withAlpha((0.05 * 255).round()),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withAlpha((0.2 * 255).round()),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.primary.withAlpha((0.1 * 255).round()),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              // 专辑封面
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withAlpha((0.3 * 255).round()),
+                  borderRadius: BorderRadius.circular(12),
+                  image: mediaStatus.artworkUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(mediaStatus.artworkUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: mediaStatus.artworkUrl == null
+                    ? Icon(
+                        Icons.music_note,
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha((0.5 * 255).round()),
+                        size: 40,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 20),
+              
+              // 歌曲信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mediaStatus.title ?? '未知曲目',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      mediaStatus.artist ?? '未知艺术家',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha((0.7 * 255).round()),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 媒体控制按钮区域
+  Widget _buildMediaControls(BuildContext context) {
+    final mediaStatus = ref.watch(mediaStatusProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // 专辑封面占位
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE91E63).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.music_note_rounded,
-              color: Color(0xFFE91E63),
-              size: 30,
-            ),
+          _buildMediaButton(context, Icons.skip_previous, '上一首', () => _sendMediaControl('previous')),
+          _buildMediaButton(
+            context,
+            mediaStatus.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+            mediaStatus.isPlaying ? '暂停' : '播放',
+            () => _sendMediaControl('play_pause'),
+            isPrimary: true,
           ),
-          const SizedBox(width: 16),
-          
-          // 歌曲信息
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '当前播放',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Windows 媒体播放器',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '准备播放音乐或视频',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
+          _buildMediaButton(context, Icons.skip_next, '下一首', () => _sendMediaControl('next')),
         ],
       ),
     );
   }
 
   /// 媒体控制按钮
-  Widget _buildMediaControls(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
-          width: 1,
+  Widget _buildMediaButton(BuildContext context, IconData icon, String tooltip, VoidCallback onPressed, {bool isPrimary = false}) {
+    final color = isPrimary
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.onSurface.withAlpha((0.7 * 255).round());
+    final bgColor = isPrimary
+        ? Theme.of(context).colorScheme.primary.withAlpha((0.1 * 255).round())
+        : Colors.transparent;
+    final iconSize = isPrimary ? 56.0 : 32.0;
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(isPrimary ? 30 : 20),
+        child: Container(
+          padding: EdgeInsets.all(isPrimary ? 16 : 12),
+          decoration: BoxDecoration(
+            color: bgColor,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: iconSize),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildMediaButton(
-            context,
-            icon: Icons.skip_previous_rounded,
-            onPressed: () => _sendMediaControl('previous'),
-            size: 48,
-          ),
-          _buildMediaButton(
-            context,
-            icon: Icons.play_arrow_rounded,
-            onPressed: () => _sendMediaControl('play_pause'),
-            size: 64,
-            isPrimary: true,
-          ),
-          _buildMediaButton(
-            context,
-            icon: Icons.skip_next_rounded,
-            onPressed: () => _sendMediaControl('next'),
-            size: 48,
-          ),
-        ],
       ),
     );
   }
 
   /// 音量控制
   Widget _buildVolumeControl(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+    final volumeState = ref.watch(volumeStateProvider);
+    final volume = volumeState.volume ?? 0.0;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.onSurface.withAlpha((0.12 * 255).round()),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
-      child: Consumer(
-        builder: (context, ref, child) {
-          final volumeState = ref.watch(volumeStateProvider);
-          
-          String volumeText;
-          double volumeProgress;
-
-          if (volumeState.volume == null) {
-            volumeText = '获取中...';
-            volumeProgress = 0.0;
-          } else if (volumeState.isMuted) {
-            volumeText = '静音';
-            volumeProgress = 0.0;
-          } else {
-            final volumePercentage = (volumeState.volume! * 100).round();
-            volumeText = '$volumePercentage%';
-            volumeProgress = volumeState.volume!;
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.volume_up_rounded,
-                    color: const Color(0xFFE91E63),
-                    size: 20,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                _buildVolumeButton(
+                  context,
+                  volumeState.isMuted ? Icons.volume_off : Icons.volume_down,
+                  '静音/取消静音',
+                  () => _sendMediaControl('mute'),
+                  color: volumeState.isMuted
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.onSurface.withAlpha((0.6 * 255).round()),
+                ),
+                Expanded(
+                  child: Slider(
+                    value: volume,
+                    min: 0.0,
+                    max: 1.0,
+                    divisions: 20,
+                    onChanged: (value) {
+                      _setSystemVolume(value);
+                    },
+                    onChangeEnd: (value) {
+                      _requestVolumeStatusDelayed();
+                    },
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '音量控制',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFFE91E63),
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    volumeText,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: volumeState.isMuted ? Colors.red : const Color(0xFFE91E63),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildMediaButton(
-                    context,
-                    icon: Icons.volume_down_rounded,
-                    onPressed: () => _sendMediaControl('volume_down'),
-                    size: 32,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: volumeState.isMuted 
-                            ? Colors.red 
-                            : const Color(0xFFE91E63),
-                        inactiveTrackColor: const Color(0xFFE91E63).withOpacity(0.3),
-                        thumbColor: volumeState.isMuted 
-                            ? Colors.red 
-                            : const Color(0xFFE91E63),
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-                        trackHeight: 6,
-                      ),
-                      child: Slider(
-                        value: volumeProgress,
-                        min: 0.0,
-                        max: 1.0,
-                        onChanged: volumeState.volume == null ? null : (value) {
-                          ref.read(volumeStateProvider.notifier).updateVolume(value);
-                        },
-                        onChangeEnd: volumeState.volume == null ? null : (value) {
-                          _setSystemVolume(value);
-                          _requestVolumeStatusDelayed();
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  _buildMediaButton(
-                    context,
-                    icon: Icons.volume_up_rounded,
-                    onPressed: () => _sendMediaControl('volume_up'),
-                    size: 32,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildMediaButton(
-                    context,
-                    icon: volumeState.isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                    onPressed: () => _sendMediaControl('mute'),
-                    size: 32,
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
+                ),
+                _buildVolumeButton(
+                  context,
+                  Icons.volume_up,
+                  '音量+',
+                  () {
+                    final newVolume = (volume + 0.05).clamp(0.0, 1.0);
+                    _setSystemVolume(newVolume);
+                    _requestVolumeStatusDelayed();
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  /// 音量调节按钮
+  Widget _buildVolumeButton(BuildContext context, IconData icon, String tooltip, VoidCallback onPressed, {Color? color}) {
+    return IconButton(
+      icon: Icon(icon, color: color ?? Theme.of(context).colorScheme.onSurface.withAlpha((0.6 * 255).round())),
+      tooltip: tooltip,
+      onPressed: onPressed,
+      iconSize: 28,
     );
   }
 
   /// 快速操作面板
   Widget _buildQuickActionsPanel(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.flash_on_rounded,
-                color: const Color(0xFFE91E63),
-                size: 20,
+          Padding(
+            padding: const EdgeInsets.only(left: 12, bottom: 12),
+            child: Text(
+              '快速操作',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface.withAlpha((0.8 * 255).round()),
               ),
-              const SizedBox(width: 8),
-              Text(
-                '快速操作',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFE91E63),
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 16),
           GridView.count(
+            crossAxisCount: 4,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 4,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
             children: [
-              _buildQuickActionButton('截图', Icons.camera_alt_rounded, const Color(0xFFFF5722), () => context.go('/tools')),
-              _buildQuickActionButton('锁屏', Icons.lock_rounded, const Color(0xFF2196F3), () => _sendSystemControl('lock')),
-              _buildQuickActionButton('显示', Icons.monitor_rounded, const Color(0xFF4CAF50), () => _sendSystemControl('display')),
-              _buildQuickActionButton('休眠', Icons.bedtime_rounded, const Color(0xFF9C27B0), () => _sendSystemControl('sleep')),
+              _buildActionCard(context, '关机', Icons.power_settings_new, () => _showConfirmationDialog('关机', () => _sendSystemControl('shutdown')), color: const Color(0xFFD32F2F)),
+              _buildActionCard(context, '重启', Icons.restart_alt, () => _showConfirmationDialog('重启', () => _sendSystemControl('restart')), color: const Color(0xFFF57C00)),
+              _buildActionCard(context, '睡眠', Icons.bedtime, () => _sendSystemControl('sleep'), color: const Color(0xFF1976D2)),
+              _buildActionCard(context, '锁屏', Icons.lock, () => _sendSystemControl('lock'), color: const Color(0xFF388E3C)),
+              _buildActionCard(context, 'PPT下一页', Icons.arrow_forward_ios, () => _sendSystemControl('ppt_next'), color: const Color(0xFF7B1FA2)),
+              _buildActionCard(context, 'PPT上一页', Icons.arrow_back_ios, () => _sendSystemControl('ppt_previous'), color: const Color(0xFF7B1FA2)),
+              _buildActionCard(context, '复制', Icons.copy, () => _sendShortcut('c', modifiers: ['ctrl']), color: const Color(0xFF0288D1)),
+              _buildActionCard(context, '粘贴', Icons.paste, () => _sendShortcut('v', modifiers: ['ctrl']), color: const Color(0xFF0288D1)),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// 操作卡片
+  Widget _buildActionCard(BuildContext context, String title, IconData icon, VoidCallback onTap, {required Color color}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withAlpha((0.1 * 255).round()),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: color.withAlpha((0.2 * 255).round()),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: color.withAlpha((0.9 * 255).round()),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   /// 系统状态概览
   Widget _buildSystemStatusOverview(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+    final systemInfo = ref.watch(systemInfoProvider);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE91E63).withOpacity(0.2),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.onSurface.withAlpha((0.12 * 255).round()),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE91E63).withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.computer_rounded,
-                color: const Color(0xFFE91E63),
-                size: 20,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '系统状态概览',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface.withAlpha((0.8 * 255).round()),
               ),
-              const SizedBox(width: 8),
-              Text(
-                'PC状态',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFE91E63),
-                ),
-              ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: () => context.go('/tools'),
-                icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                label: const Text('详细', style: TextStyle(fontSize: 12)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatusItem('CPU', '45%', Colors.green),
-              ),
-              Expanded(
-                child: _buildStatusItem('内存', '8.2GB', Colors.orange),
-              ),
-              Expanded(
-                child: _buildStatusItem('网络', '50M', Colors.green),
-              ),
-              Expanded(
-                child: _buildStatusItem('温度', '42°C', Colors.green),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 媒体控制区域 - 直接操作，最高优先级
-  // ignore: unused_element
-  Widget _buildMediaControlSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 标题
-          Row(
-            children: [
-              Icon(
-                Icons.music_note_rounded,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '媒体控制',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // 主要播放控制 - 大按钮设计
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildMediaButton(
-                context,
-                icon: Icons.skip_previous_rounded,
-                onPressed: () => _sendMediaControl('previous'),
-                size: 48,
-              ),
-              const SizedBox(width: 20),
-              _buildMediaButton(
-                context,
-                icon: Icons.play_arrow_rounded,
-                onPressed: () => _sendMediaControl('play_pause'),
-                size: 64, // 最大按钮
-                isPrimary: true,
-              ),
-              const SizedBox(width: 20),
-              _buildMediaButton(
-                context,
-                icon: Icons.skip_next_rounded,
-                onPressed: () => _sendMediaControl('next'),
-                size: 48,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // 音量控制 - 滑块设计
-          Consumer(
-            builder: (context, ref, child) {
-              final volumeState = ref.watch(volumeStateProvider);
-              
-              String volumeText;
-              double volumeProgress;
-
-              // 🔧 修复：处理volume为null的情况（未知状态）
-              if (volumeState.volume == null) {
-                volumeText = '获取中...';
-                volumeProgress = 0.0; // 显示为0，但不表示实际音量
-              } else if (volumeState.isMuted) {
-                volumeText = '静音';
-                volumeProgress = 0.0;
-              } else {
-                final volumePercentage = (volumeState.volume! * 100).round();
-                volumeText = '$volumePercentage%';
-                volumeProgress = volumeState.volume!;
-              }
-
-              return Column(
-                children: [
-                  // 音量滑块控制
-                  Row(
-                    children: [
-                      // 音量减按钮
-                      _buildMediaButton(
-                        context,
-                        icon: Icons.volume_down_rounded,
-                        onPressed: () => _sendMediaControl('volume_down'),
-                        size: 32,
-                      ),
-                      const SizedBox(width: 12),
-                      
-                      // 音量滑块
-                      Expanded(
-                        child: Column(
-                          children: [
-                            // 音量滑块
-                            SliderTheme(
-                              data: SliderTheme.of(context).copyWith(
-                                activeTrackColor: volumeState.volume == null
-                                    ? Colors.grey
-                                    : (volumeState.isMuted 
-                                        ? Colors.red 
-                                        : Theme.of(context).colorScheme.primary),
-                                inactiveTrackColor: volumeState.volume == null
-                                    ? Colors.grey.withOpacity(0.3)
-                                    : Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                                thumbColor: volumeState.volume == null
-                                    ? Colors.grey
-                                    : (volumeState.isMuted 
-                                        ? Colors.red 
-                                        : Theme.of(context).colorScheme.primary),
-                                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                                trackHeight: 4,
-                              ),
-                              child: Slider(
-                                value: volumeProgress,
-                                min: 0.0,
-                                max: 1.0,
-                                onChanged: volumeState.volume == null ? null : (value) {
-                                  // 🔧 修复：onChanged只更新本地状态，不发送网络请求
-                                  ref.read(volumeStateProvider.notifier).updateVolume(value);
-                                },
-                                onChangeEnd: volumeState.volume == null ? null : (value) {
-                                  // 🔧 修复：onChangeEnd发送设置并延迟请求状态
-                                  _setSystemVolume(value);
-                                  _requestVolumeStatusDelayed();
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            // 音量文字显示
-                            Text(
-                              volumeText,
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: volumeState.volume == null 
-                                    ? Colors.grey
-                                    : (volumeState.isMuted ? Colors.red : null),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(width: 12),
-                      // 音量加按钮
-                      _buildMediaButton(
-                        context,
-                        icon: Icons.volume_up_rounded,
-                        onPressed: () => _sendMediaControl('volume_up'),
-                        size: 32,
-                      ),
-                      const SizedBox(width: 12),
-                      // 静音按钮
-                      _buildMediaButton(
-                        context,
-                        icon: volumeState.isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                        onPressed: () => _sendMediaControl('mute'),
-                        size: 32,
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 媒体控制按钮
-  Widget _buildMediaButton(
-    BuildContext context, {
-    required IconData icon,
-    required VoidCallback onPressed,
-    required double size,
-    bool isPrimary = false,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(size / 2),
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: isPrimary 
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.surface,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-              width: 2,
             ),
-            boxShadow: isPrimary ? [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ] : null,
-          ),
-          child: Icon(
-            icon,
-            color: isPrimary 
-                ? Colors.white
-                : Theme.of(context).colorScheme.primary,
-            size: size * 0.5,
-          ),
+            const SizedBox(height: 16),
+            _buildStatusRow(context, Icons.memory, 'CPU 使用率', '${systemInfo.cpuUsage.toStringAsFixed(1)} %'),
+            const SizedBox(height: 12),
+            _buildStatusRow(context, Icons.storage, '内存使用率', '${systemInfo.memoryUsage.toStringAsFixed(1)} %'),
+          ],
         ),
       ),
     );
   }
 
-  /// 系统快捷操作区域
-  // ignore: unused_element
-  Widget _buildSystemShortcutsSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.computer_rounded,
-                color: Theme.of(context).colorScheme.secondary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '系统快捷',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // 系统快捷按钮网格
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 4,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 1.0,
-            children: [
-              _buildSystemShortcutButton(
-                context,
-                icon: Icons.lock_rounded,
-                label: '锁屏',
-                onPressed: () => _sendSystemControl('lock'),
-              ),
-              _buildSystemShortcutButton(
-                context,
-                icon: Icons.bedtime_rounded,
-                label: '睡眠',
-                onPressed: () => _sendSystemControl('sleep'),
-              ),
-              _buildSystemShortcutButton(
-                context,
-                icon: Icons.volume_off_rounded,
-                label: '静音',
-                onPressed: () => _sendSystemControl('mute'),
-              ),
-              _buildSystemShortcutButton(
-                context,
-                icon: Icons.brightness_6_rounded,
-                label: '亮度',
-                onPressed: () => _sendSystemControl('brightness'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 系统快捷按钮
-  Widget _buildSystemShortcutButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: Theme.of(context).colorScheme.secondary,
-                size: 24,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.w600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 常用快捷键区域
-  // ignore: unused_element
-  Widget _buildCommonShortcutsSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.tertiaryContainer.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.keyboard_rounded,
-                color: Theme.of(context).colorScheme.tertiary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '常用快捷键',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.tertiary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // 快捷键按钮网格
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 1.8,
-            children: [
-              _buildShortcutButton(
-                context,
-                label: 'Ctrl+C',
-                description: '复制',
-                onPressed: () => _sendShortcut('c', modifiers: ['ctrl']),
-              ),
-              _buildShortcutButton(
-                context,
-                label: 'Ctrl+V',
-                description: '粘贴',
-                onPressed: () => _sendShortcut('v', modifiers: ['ctrl']),
-              ),
-              _buildShortcutButton(
-                context,
-                label: 'Ctrl+Z',
-                description: '撤销',
-                onPressed: () => _sendShortcut('z', modifiers: ['ctrl']),
-              ),
-              _buildShortcutButton(
-                context,
-                label: 'Alt+Tab',
-                description: '切换',
-                onPressed: () => _sendShortcut('VK_TAB', modifiers: ['alt']),
-              ),
-              _buildShortcutButton(
-                context,
-                label: 'Backspace',
-                description: '退格',
-                onPressed: () => _sendShortcut('VK_BACK'),
-              ),
-              _buildShortcutButton(
-                context,
-                label: 'Enter',
-                description: '回车',
-                onPressed: () => _sendShortcut('VK_RETURN'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 快捷键按钮
-  Widget _buildShortcutButton(
-    BuildContext context, {
-    required String label,
-    required String description,
-    required VoidCallback onPressed,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.tertiary.withOpacity(0.2),
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.tertiary,
-                  fontWeight: FontWeight.w700,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                description,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 快速输入区域
-  // ignore: unused_element
-  Widget _buildQuickInputSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.edit_rounded,
-                color: Theme.of(context).colorScheme.onSurface,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '快速输入',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // 输入框和发送按钮
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _quickInputController,
-                  decoration: InputDecoration(
-                    hintText: '快速输入文本...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  onSubmitted: (_) => _sendQuickInput(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              FilledButton.icon(
-                onPressed: _sendQuickInput,
-                icon: const Icon(Icons.send_rounded, size: 18),
-                label: const Text('发送'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotConnectedView(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.wifi_off_rounded,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            '设备未连接',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '请先连接到PC设备后使用控制功能',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 48),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: () => context.push('/connect'),
-              icon: const Icon(Icons.wifi_rounded),
-              label: const Text('连接设备'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建快速操作按钮
-  Widget _buildQuickActionButton(
-    String label,
-    IconData icon,
-    Color color,
-    VoidCallback onPressed,
-  ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: color,
-                size: 24,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 构建状态项
-  Widget _buildStatusItem(String label, String value, Color color) {
-    return Column(
+  /// 状态行
+  Widget _buildStatusRow(BuildContext context, IconData icon, String label, String value) {
+    return Row(
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
+        Icon(icon, color: Theme.of(context).colorScheme.primary, size: 24),
+        const SizedBox(width: 16),
         Text(
           label,
-          style: TextStyle(
-            color: color.withOpacity(0.7),
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withAlpha((0.8 * 255).round()),
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
       ],
+    );
+  }
+
+  /// 未连接时的界面
+  Widget _buildNotConnectedView(BuildContext context) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.error.withAlpha((0.2 * 255).round()),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.error.withAlpha((0.1 * 255).round()),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          color: Theme.of(context).colorScheme.surface,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.error.withAlpha((0.1 * 255).round()),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Theme.of(context).colorScheme.error.withAlpha((0.2 * 255).round())),
+              ),
+              child: Icon(
+                Icons.power_off,
+                color: Theme.of(context).colorScheme.error,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              '未连接到任何设备',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '请先建立连接以使用媒体控制功能',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withAlpha((0.7 * 255).round()),
+              ),
+            ),
+            const SizedBox(height: 32),
+            FilledButton.icon(
+              icon: const Icon(Icons.link),
+              label: const Text('前往连接'),
+              onPressed: () {
+                context.go('/connect');
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 确认对话框
+  void _showConfirmationDialog(String actionName, VoidCallback onConfirm) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            '确认操作',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          content: Text('您确定要执行 “$actionName” 操作吗？'),
+          actions: [
+            TextButton(
+              child: Text(
+                '取消',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha((0.7 * 255).round())),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                onConfirm();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('已发送 “$actionName” 指令'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              child: const Text('确认'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

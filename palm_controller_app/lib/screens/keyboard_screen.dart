@@ -150,13 +150,13 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF3F51B5).withOpacity(0.1),
-            const Color(0xFF303F9F).withOpacity(0.05),
+            const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
+            const Color(0xFF303F9F).withAlpha((0.05 * 255).round()),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withAlpha((0.2 * 255).round()),
           width: 1,
         ),
       ),
@@ -166,7 +166,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF3F51B5).withOpacity(0.1),
+              color: const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -204,7 +204,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
                     Text(
                       currentConnection?.name ?? 'Windows PC',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha((0.7 * 255).round()),
                       ),
                     ),
                   ],
@@ -226,12 +226,12 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withAlpha((0.2 * 255).round()),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3F51B5).withOpacity(0.1),
+            color: const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -267,7 +267,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
               hintText: '在此输入文本，回车发送到PC...',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: const Color(0xFF3F51B5).withOpacity(0.3)),
+                borderSide: BorderSide(color: const Color(0xFF3F51B5).withAlpha((0.3 * 255).round())),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -297,7 +297,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
               icon: const Icon(Icons.send_rounded),
               label: const Text('发送文本'),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF3F51B5),
+                backgroundColor: const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
@@ -316,12 +316,12 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withAlpha((0.2 * 255).round()),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3F51B5).withOpacity(0.1),
+            color: const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -388,10 +388,10 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: isPressed ? const Color(0xFF3F51B5) : const Color(0xFF3F51B5).withOpacity(0.1),
+          color: isPressed ? const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()) : const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFF3F51B5).withOpacity(isPressed ? 1.0 : 0.3),
+            color: const Color(0xFF3F51B5).withAlpha((isPressed ? 0.3 : 0.1 * 255).round()),
             width: 1,
           ),
         ),
@@ -426,7 +426,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withAlpha((0.2 * 255).round()),
           width: 1,
         ),
       ),
@@ -489,7 +489,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withAlpha((0.2 * 255).round()),
           width: 1,
         ),
       ),
@@ -542,7 +542,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF3F51B5).withOpacity(0.2),
+          color: const Color(0xFF3F51B5).withAlpha((0.2 * 255).round()),
           width: 1,
         ),
       ),
@@ -608,7 +608,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
     required VoidCallback onPressed,
   }) {
     return Material(
-      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      color: const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onPressed,
@@ -639,7 +639,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
   /// 功能键按钮
   Widget _buildFunctionKeyButton(String key) {
     return Material(
-      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      color: const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: () => _sendKey(key),
@@ -664,7 +664,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
   /// 方向键按钮
   Widget _buildDirectionKey(IconData icon, VoidCallback onPressed) {
     return Material(
-      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      color: const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onPressed,
@@ -683,7 +683,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
   /// 特殊键按钮
   Widget _buildSpecialKey(String label, VoidCallback onPressed) {
     return Material(
-      color: const Color(0xFF3F51B5).withOpacity(0.1),
+      color: const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onPressed,
@@ -720,13 +720,13 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF3F51B5).withOpacity(0.1),
-                    const Color(0xFF303F9F).withOpacity(0.05),
+                    const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
+                    const Color(0xFF303F9F).withAlpha((0.05 * 255).round()),
                   ],
                 ),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFF3F51B5).withOpacity(0.2),
+                  color: const Color(0xFF3F51B5).withAlpha((0.2 * 255).round()),
                   width: 2,
                 ),
               ),
@@ -750,7 +750,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
             Text(
               '需要连接PC设备才能使用',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha((0.7 * 255).round()),
               ),
               textAlign: TextAlign.center,
             ),
@@ -758,7 +758,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
             Text(
               '连接后即可享受完整的键盘控制体验',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Theme.of(context).colorScheme.onSurface.withAlpha((0.6 * 255).round()),
               ),
               textAlign: TextAlign.center,
             ),
@@ -769,10 +769,10 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFF3F51B5).withOpacity(0.05),
+                color: const Color(0xFF3F51B5).withAlpha((0.05 * 255).round()),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFF3F51B5).withOpacity(0.2),
+                  color: const Color(0xFF3F51B5).withAlpha((0.2 * 255).round()),
                   width: 1,
                 ),
               ),
@@ -809,7 +809,7 @@ class _KeyboardScreenState extends ConsumerState<KeyboardScreen> {
                 icon: const Icon(Icons.wifi_rounded),
                 label: const Text('连接设备'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF3F51B5),
+                  backgroundColor: const Color(0xFF3F51B5).withAlpha((0.1 * 255).round()),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
