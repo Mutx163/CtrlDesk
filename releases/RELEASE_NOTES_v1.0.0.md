@@ -13,11 +13,11 @@
 ### Windows 服务端 (推荐轻量版)
 
 #### 🌟 轻量版 (推荐)
-- **文件名**: `CtrlDesk-Server-v1.0.0-lite.zip`
-- **文件大小**: ~1MB
+- **文件名**: `CtrlDesk-Server-v1.0.0-lite.exe`
+- **文件大小**: ~2.1MB
 - **系统要求**: Windows 10/11 x64 + .NET 9.0 Runtime
 - **优势**: 文件小、启动快、占用内存少
-- **安装**: 解压ZIP文件，双击PalmControllerServer.exe运行
+- **运行方式**: 双击即可运行
 - **运行时下载**: [Microsoft .NET 9.0](https://dotnet.microsoft.com/download/dotnet/9.0)
 
 #### 📦 完整版 (开箱即用)
@@ -52,11 +52,11 @@
 ### 1. 设置Windows服务端
 
 #### 选择版本：
-- **轻量版用户**: 下载`CtrlDesk-Server-v1.0.0-lite.zip`，需先安装.NET 9.0 Runtime
+- **轻量版用户**: 下载`CtrlDesk-Server-v1.0.0-lite.exe`，需先安装.NET 9.0 Runtime
 - **普通用户**: 下载`CtrlDesk-Server-v1.0.0-windows.exe`，无需额外安装
 
 #### 运行步骤：
-1. 解压/运行服务端程序
+1. 下载对应版本的EXE文件
 2. 右键以管理员身份运行
 3. 确保防火墙允许程序通过
 4. 记录显示的IP地址
