@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/startup_service.dart';
 import '../services/log_service.dart';
 import '../services/auto_connect_service.dart';
+import '../providers/connection_provider.dart';
 
 class StartupWidget extends ConsumerStatefulWidget {
   final Widget child;
@@ -36,6 +37,19 @@ class _StartupWidgetState extends ConsumerState<StartupWidget> {
       
       // 短暂延迟确保UI初始化完成
       await Future.delayed(const Duration(milliseconds: 500));
+      
+      // 预先初始化关键的Provider，确保消息监听器就位
+      setState(() {
+        _statusMessage = '正在初始化服务...';
+      });
+      
+      try {
+        // 预先初始化VolumeStateProvider，确保消息监听器早期建立
+        ref.read(volumeStateProvider);
+        LogService.instance.info('VolumeStateProvider预初始化完成', category: 'Startup');
+      } catch (e) {
+        LogService.instance.warning('VolumeStateProvider预初始化失败: $e', category: 'Startup');
+      }
       
       // 启动自动设备发现服务（无论是否有历史连接都启动）
       final autoConnectService = AutoConnectService();

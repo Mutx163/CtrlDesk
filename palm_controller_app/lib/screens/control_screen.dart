@@ -22,12 +22,17 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   @override
   void initState() {
     super.initState();
-    // 🔧 界面加载时立即请求音量状态
+    // 🔧 界面加载时延迟请求音量状态，确保连接稳定
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final connectionStatus = ref.read(connectionStatusProvider);
-      if (connectionStatus == ConnectionStatus.connected) {
-        _requestVolumeStatus();
-      }
+      // 延迟1秒再请求，确保连接完全建立
+      Timer(const Duration(seconds: 1), () {
+        if (mounted) {
+          final connectionStatus = ref.read(connectionStatusProvider);
+          if (connectionStatus == ConnectionStatus.connected) {
+            _requestVolumeStatus();
+          }
+        }
+      });
     });
   }
 
@@ -39,10 +44,22 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   }
 
   // 发送控制消息的通用方法
-  void _sendControlMessage(ControlMessage message) {
+  void _sendControlMessage(ControlMessage message) async {
+    // 首先检查连接状态
+    final connectionStatus = ref.read(connectionStatusProvider);
+    if (connectionStatus != ConnectionStatus.connected) {
+      print('连接未建立，无法发送消息: ${message.type}');
+      return;
+    }
+
     final socketService = ref.read(socketServiceProvider);
-    socketService.sendMessage(message);
-    HapticFeedback.lightImpact(); // 触觉反馈
+    final success = await socketService.sendMessage(message);
+    
+    if (success) {
+      HapticFeedback.lightImpact(); // 触觉反馈
+    } else {
+      print('消息发送失败: ${message.type}');
+    }
   }
 
   // 媒体控制方法
@@ -394,6 +411,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
   Widget _buildVolumeControl(BuildContext context) {
     final volumeState = ref.watch(volumeStateProvider);
     final volume = volumeState.volume ?? 0.0;
+
+    // 添加调试信息
+    print('🎵 媒体页面音量控制构建: volume=${volumeState.volume}, displayVolume=$volume, isMuted=${volumeState.isMuted}');
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

@@ -82,6 +82,9 @@ namespace PalmControllerServer
             
             // 订阅音量状态变化事件
             _systemControlService.VolumeChanged += OnVolumeChanged;
+            
+            // 设置SystemControlService对SocketServer的引用，使其能够发送数据到客户端
+            _systemControlService.SetSocketServer(_socketServer);
         }
 
         private void InitializeLogging()

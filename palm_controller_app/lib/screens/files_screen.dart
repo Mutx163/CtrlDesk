@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/file_item.dart';
 import '../providers/file_provider.dart';
 import '../widgets/file_widgets.dart';
+import '../services/file_service.dart';
+import 'image_preview_screen.dart';
 
 class FilesScreen extends ConsumerStatefulWidget {
   const FilesScreen({super.key});
@@ -46,7 +48,8 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('文件管理'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         
         // 顶部标签页
         bottom: TabBar(
@@ -425,6 +428,17 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
           ),
           const SizedBox(height: 20),
 
+          // 图片预览 (仅PC端图片文件显示)
+          if (!_isShowingLocalFiles(ref) && _isImageFile(file))
+            ListTile(
+              leading: const Icon(Icons.visibility),
+              title: const Text('预览图片'),
+              onTap: () {
+                Navigator.pop(context);
+                _showImagePreview(context, file);
+              },
+            ),
+
           // 重命名
           ListTile(
             leading: const Icon(Icons.edit),
@@ -674,6 +688,35 @@ class _FilesScreenState extends ConsumerState<FilesScreen>
               },
             );
           }).toList(),
+        ),
+      ),
+    );
+  }
+
+  /// 检查当前是否在显示本地文件
+  bool _isShowingLocalFiles(WidgetRef ref) {
+    final browseMode = ref.read(fileBrowseModeProvider);
+    return browseMode == FileBrowseMode.local;
+  }
+
+  /// 检查文件是否为图片格式
+  bool _isImageFile(FileItem file) {
+    if (file.type.isDirectory) return false;
+    
+    final extension = file.extension?.toLowerCase();
+    if (extension == null) return false;
+    
+    const supportedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+    return supportedExtensions.contains(extension);
+  }
+
+  /// 显示图片预览界面
+  void _showImagePreview(BuildContext context, FileItem file) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ImagePreviewScreen(
+          imagePath: file.path,
+          fileName: file.name,
         ),
       ),
     );

@@ -124,7 +124,11 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
   }
 
   void _onItemTapped(int index) {
-    _pageController.jumpToPage(index);
+    // 先检查索引是否有效
+    final pages = _getPagesForConnectionStatus(ref.read(connectionStatusProvider));
+    if (index >= 0 && index < pages.length) {
+      _pageController.jumpToPage(index);
+    }
   }
 
   @override
@@ -135,6 +139,17 @@ class _MainScaffoldState extends ConsumerState<MainScaffold> {
         // 关键：在下一次build之前，就要准备好新的controller和索引
         setState(() {
           _updateAndInitializeController();
+        });
+        
+        // 如果状态发生了变化，安全地导航到合适的页面
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            final newPages = _getPagesForConnectionStatus(next);
+            if (_currentPageIndex >= newPages.length) {
+              _currentPageIndex = 0;
+              _pageController.jumpToPage(0);
+            }
+          }
         });
       }
     });

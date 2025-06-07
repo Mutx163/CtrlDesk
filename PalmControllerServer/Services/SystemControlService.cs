@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using PalmControllerServer.Models;
 using Newtonsoft.Json.Linq;
@@ -10,6 +12,9 @@ namespace PalmControllerServer.Services
 {
     public class SystemControlService
     {
+        // SocketServer引用，用于发送数据到客户端
+        private SocketServer? _socketServer;
+        
         // Windows API 常量
         private const int MOUSEEVENTF_MOVE = 0x0001;
         private const int MOUSEEVENTF_LEFTDOWN = 0x0002;
@@ -56,6 +61,12 @@ namespace PalmControllerServer.Services
 
         // 事件委托，用于音量状态改变通知
         public event Action<float, bool>? VolumeChanged;
+        
+        // 设置SocketServer引用
+        public void SetSocketServer(SocketServer socketServer)
+        {
+            _socketServer = socketServer;
+        }
         
         // 音量变化监听相关
         private IAudioEndpointVolume? _volumeEndpoint;
@@ -107,7 +118,7 @@ namespace PalmControllerServer.Services
         }
 
         // 处理控制消息
-        public void ProcessControlMessage(ControlMessage message)
+        public async void ProcessControlMessage(ControlMessage message)
         {
             var stopwatch = Stopwatch.StartNew();
             
@@ -125,7 +136,25 @@ namespace PalmControllerServer.Services
                         HandleMediaControl(message);
                         break;
                     case "system_control":
-                        HandleSystemControl(message);
+                        await HandleSystemControlAsync(message);
+                        break;
+                    case "file_operation":
+                        await HandleFileOperationAsync(message);
+                        break;
+                    case "find_cursor":
+                        FindCursor();
+                        break;
+                    case "shutdown_delayed":
+                        HandleDelayedAction(message, "shutdown");
+                        break;
+                    case "restart_delayed":
+                        HandleDelayedAction(message, "restart");
+                        break;
+                    case "lock_delayed":
+                        HandleDelayedAction(message, "lock");
+                        break;
+                    case "run_command":
+                        HandleRunCommand(message);
                         break;
                     default:
                         LogService.Instance.Warning($"Unknown message type: {message.Type}", "SystemControl");
@@ -247,6 +276,7 @@ namespace PalmControllerServer.Services
                     break;
                 case "get_volume_status":
                     // 新增：客户端请求当前音量状态
+                    LogService.Instance.Info("客户端请求音量状态", "SystemControl");
                     NotifyVolumeChange();
                     break;
                 case var setVolumeAction when setVolumeAction != null && setVolumeAction.StartsWith("set_volume:"):
@@ -255,6 +285,8 @@ namespace PalmControllerServer.Services
                     if (float.TryParse(volumeStr, out float volumeValue))
                     {
                         SetSystemVolume(volumeValue);
+                        // 设置音量后立即通知客户端
+                        NotifyVolumeChange();
                         LogService.Instance.Info($"Volume set to {volumeValue:P0} via slider", "SystemControl");
                     }
                     else
@@ -268,7 +300,7 @@ namespace PalmControllerServer.Services
         }
 
         // 处理系统控制
-        private async void HandleSystemControl(ControlMessage message)
+        private async Task HandleSystemControlAsync(ControlMessage message)
         {
             var action = message.Payload.GetValueOrDefault("action")?.ToString();
 
@@ -328,6 +360,30 @@ namespace PalmControllerServer.Services
                     break;
                 case "monitor_get_performance":
                     HandleGetPerformanceData();
+                    break;
+                case "get_system_status":
+                    await HandleGetSystemStatusAsync();
+                    break;
+                
+                // 工具功能
+                case "find_cursor":
+                    FindCursor();
+                    break;
+                
+                // 定时任务功能
+                case "shutdown_delayed":
+                    HandleDelayedAction(message, "shutdown");
+                    break;
+                case "restart_delayed":
+                    HandleDelayedAction(message, "restart");
+                    break;
+                case "lock_delayed":
+                    HandleDelayedAction(message, "lock");
+                    break;
+                
+                // 运行命令功能
+                case "run_command":
+                    HandleRunCommand(message);
                     break;
             }
 
@@ -412,8 +468,8 @@ namespace PalmControllerServer.Services
                 var hardwareInfo = await HardwareMonitorService.Instance.GetHardwareInfoAsync();
                 LogService.Instance.Info("Hardware info retrieved successfully", "SystemControl");
                 
-                // 这里可以考虑将硬件信息发送回客户端
-                // 目前暂时只记录日志
+                // 发送硬件信息到客户端
+                await SendHardwareInfoToClients(hardwareInfo);
             }
             catch (Exception ex)
             {
@@ -422,15 +478,15 @@ namespace PalmControllerServer.Services
         }
 
         // 处理刷新性能数据
-        private void HandleRefreshPerformanceData()
+        private async void HandleRefreshPerformanceData()
         {
             try
             {
                 var performanceData = HardwareMonitorService.Instance.RefreshPerformanceData();
                 LogService.Instance.Info("Performance data refreshed successfully", "SystemControl");
                 
-                // 这里可以考虑将性能数据发送回客户端
-                // 目前暂时只记录日志
+                // 发送性能数据到客户端
+                await SendPerformanceDataToClients(performanceData);
             }
             catch (Exception ex)
             {
@@ -439,21 +495,462 @@ namespace PalmControllerServer.Services
         }
 
         // 处理获取性能数据
-        private void HandleGetPerformanceData()
+        private async void HandleGetPerformanceData()
         {
             try
             {
                 var performanceData = HardwareMonitorService.Instance.GetPerformanceData();
                 LogService.Instance.Info("Performance data retrieved successfully", "SystemControl");
                 
-                // 这里可以考虑将性能数据发送回客户端
-                // 目前暂时只记录日志
+                // 发送性能数据到客户端
+                await SendPerformanceDataToClients(performanceData);
             }
             catch (Exception ex)
             {
                 LogService.Instance.Error("Failed to get performance data", ex, "SystemControl");
             }
         }
+
+        // 处理获取系统状态请求（结合硬件信息和性能数据）
+        private async Task HandleGetSystemStatusAsync()
+        {
+            try
+            {
+                LogService.Instance.Info("客户端请求系统状态", "SystemControl");
+                
+                // 同时获取硬件信息和性能数据
+                var hardwareInfo = await HardwareMonitorService.Instance.GetHardwareInfoAsync();
+                var performanceData = HardwareMonitorService.Instance.GetPerformanceData();
+                
+                LogService.Instance.Info($"系统状态数据已收集 - CPU:{performanceData.CpuUsage:F1}%, RAM:{performanceData.RamUsage:F1}%", "SystemControl");
+                
+                // 发送硬件信息和性能数据到客户端
+                await SendHardwareInfoToClients(hardwareInfo);
+                await SendPerformanceDataToClients(performanceData);
+                
+                LogService.Instance.Info("系统状态数据已发送给客户端", "SystemControl");
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Error("Failed to get system status", ex, "SystemControl");
+            }
+        }
+        
+        // 找光标功能 - 通过快速移动鼠标帮助用户定位光标
+        private void FindCursor()
+        {
+            try
+            {
+                // 获取当前鼠标位置
+                GetCursorPos(out POINT currentPos);
+                
+                // 快速移动鼠标形成小范围震动，帮助用户找到光标
+                for (int i = 0; i < 8; i++)
+                {
+                    var offsetX = (i % 2 == 0) ? 20 : -20;
+                    var offsetY = (i % 4 < 2) ? 10 : -10;
+                    
+                    MoveMouse(offsetX, offsetY);
+                    System.Threading.Thread.Sleep(50);
+                }
+                
+                // 恢复到原始位置
+                SetCursorPos(currentPos.X, currentPos.Y);
+                
+                LogService.Instance.Info("Find cursor executed successfully", "SystemControl");
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Error("Failed to execute find cursor", ex, "SystemControl");
+            }
+        }
+
+        // 处理文件操作
+        private async Task HandleFileOperationAsync(ControlMessage message)
+        {
+            var operation = message.Payload.GetValueOrDefault("operation")?.ToString();
+            var path = message.Payload.GetValueOrDefault("path")?.ToString() ?? "";
+            var name = message.Payload.GetValueOrDefault("name")?.ToString();
+            var data = message.Payload.GetValueOrDefault("data")?.ToString();
+
+            try
+            {
+                switch (operation)
+                {
+                    case "list_files":
+                        await HandleListFilesAsync(message.MessageId, path);
+                        break;
+                    case "create_directory":
+                        await HandleCreateDirectoryAsync(message.MessageId, path, name);
+                        break;
+                    case "delete":
+                        await HandleDeleteFileAsync(message.MessageId, path);
+                        break;
+                    case "rename":
+                        await HandleRenameFileAsync(message.MessageId, path, name);
+                        break;
+                    case "upload":
+                        await HandleUploadFileAsync(message.MessageId, path, data);
+                        break;
+                    case "download":
+                        await HandleDownloadFileAsync(message.MessageId, path);
+                        break;
+                    case "preview_image":
+                        await HandleImagePreviewAsync(message.MessageId, path);
+                        break;
+                    default:
+                        LogService.Instance.Warning($"Unknown file operation: {operation}", "FileSystem");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Error($"File operation failed: {operation}", ex, "FileSystem");
+                
+                // 发送错误响应
+                var errorResponse = ControlMessage.CreateResponse(message.MessageId, false, ex.Message);
+                await _socketServer?.BroadcastMessageAsync(errorResponse);
+                         }
+         }
+
+         // 文件列表操作
+         private async Task HandleListFilesAsync(string messageId, string path)
+         {
+             try
+             {
+                 var files = new List<Dictionary<string, object>>();
+                 
+                 // 如果路径为空，返回驱动器列表
+                 if (string.IsNullOrEmpty(path))
+                 {
+                     var drives = DriveInfo.GetDrives();
+                     foreach (var drive in drives)
+                     {
+                         if (drive.IsReady)
+                         {
+                             files.Add(new Dictionary<string, object>
+                             {
+                                 ["name"] = $"{drive.Name} ({drive.DriveType})",
+                                 ["path"] = drive.RootDirectory.FullName,
+                                 ["type"] = "directory",
+                                 ["size"] = 0,
+                                 ["lastModified"] = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                                 ["isHidden"] = false
+                             });
+                         }
+                     }
+                 }
+                 else
+                 {
+                     var directory = new DirectoryInfo(path);
+                     if (directory.Exists)
+                     {
+                         // 添加目录
+                         foreach (var dir in directory.GetDirectories())
+                         {
+                             try
+                             {
+                                 files.Add(new Dictionary<string, object>
+                                 {
+                                     ["name"] = dir.Name,
+                                     ["path"] = dir.FullName,
+                                     ["type"] = "directory",
+                                     ["size"] = 0,
+                                     ["lastModified"] = dir.LastWriteTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                                     ["isHidden"] = (dir.Attributes & FileAttributes.Hidden) != 0
+                                 });
+                             }
+                             catch
+                             {
+                                 // 跳过无法访问的目录
+                             }
+                         }
+                         
+                         // 添加文件
+                         foreach (var file in directory.GetFiles())
+                         {
+                             try
+                             {
+                                 files.Add(new Dictionary<string, object>
+                                 {
+                                     ["name"] = file.Name,
+                                     ["path"] = file.FullName,
+                                     ["type"] = "file",
+                                     ["size"] = file.Length,
+                                     ["lastModified"] = file.LastWriteTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                                     ["isHidden"] = (file.Attributes & FileAttributes.Hidden) != 0,
+                                 });
+                             }
+                             catch
+                             {
+                                 // 跳过无法访问的文件
+                             }
+                         }
+                     }
+                 }
+
+                 LogService.Instance.Info($"File list retrieved: {files.Count} items for path: {path}", "FileSystem");
+                 
+                 // 发送文件列表响应
+                 var response = new
+                 {
+                     messageId = messageId,
+                     type = "file_list_response",
+                     timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                     payload = new
+                     {
+                         files = files,
+                         path = path
+                     }
+                 };
+
+                 var responseMessage = ControlMessage.FromJson(Newtonsoft.Json.JsonConvert.SerializeObject(response));
+                 if (responseMessage != null)
+                     await _socketServer?.BroadcastMessageAsync(responseMessage)!;
+             }
+             catch (Exception ex)
+             {
+                 LogService.Instance.Error($"Failed to list files for path: {path}", ex, "FileSystem");
+                 
+                 // 发送错误响应
+                 var errorResponse = new
+                 {
+                     messageId = messageId,
+                     type = "file_list_response",
+                     timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                     payload = new
+                     {
+                         files = new List<object>(),
+                         error = ex.Message
+                     }
+                 };
+
+                 var errorMessage = ControlMessage.FromJson(Newtonsoft.Json.JsonConvert.SerializeObject(errorResponse));
+                 if (errorMessage != null)
+                     await _socketServer?.BroadcastMessageAsync(errorMessage)!;
+             }
+         }
+
+         // 创建目录操作
+         private async Task HandleCreateDirectoryAsync(string messageId, string path, string name)
+         {
+             try
+             {
+                 if (string.IsNullOrEmpty(name))
+                 {
+                     throw new ArgumentException("目录名称不能为空");
+                 }
+                 
+                 var fullPath = Path.Combine(path, name);
+                 Directory.CreateDirectory(fullPath);
+                 
+                 var response = ControlMessage.CreateResponse(messageId, true, "目录创建成功");
+                 await _socketServer?.BroadcastMessageAsync(response);
+                 LogService.Instance.Info($"目录创建成功: {fullPath}", "FileSystem");
+             }
+             catch (Exception ex)
+             {
+                 var errorResponse = ControlMessage.CreateResponse(messageId, false, $"创建目录失败: {ex.Message}");
+                 await _socketServer?.BroadcastMessageAsync(errorResponse);
+                 throw;
+             }
+         }
+
+         // 删除文件/目录操作
+         private async Task HandleDeleteFileAsync(string messageId, string path)
+         {
+             try
+             {
+                 if (File.Exists(path))
+                 {
+                     File.Delete(path);
+                 }
+                 else if (Directory.Exists(path))
+                 {
+                     Directory.Delete(path, true);
+                 }
+                 else
+                 {
+                     throw new FileNotFoundException("文件或目录不存在");
+                 }
+                 
+                 var response = ControlMessage.CreateResponse(messageId, true, "删除成功");
+                 await _socketServer?.BroadcastMessageAsync(response);
+                 LogService.Instance.Info($"删除成功: {path}", "FileSystem");
+             }
+             catch (Exception ex)
+             {
+                 var errorResponse = ControlMessage.CreateResponse(messageId, false, $"删除失败: {ex.Message}");
+                 await _socketServer?.BroadcastMessageAsync(errorResponse);
+                 throw;
+             }
+         }
+
+         // 重命名文件/目录操作
+         private async Task HandleRenameFileAsync(string messageId, string oldPath, string newName)
+         {
+             try
+             {
+                 if (string.IsNullOrEmpty(newName))
+                 {
+                     throw new ArgumentException("新名称不能为空");
+                 }
+                 
+                 var directory = Path.GetDirectoryName(oldPath);
+                 var newPath = Path.Combine(directory, newName);
+                 
+                 if (File.Exists(oldPath))
+                 {
+                     File.Move(oldPath, newPath);
+                 }
+                 else if (Directory.Exists(oldPath))
+                 {
+                     Directory.Move(oldPath, newPath);
+                 }
+                 else
+                 {
+                     throw new FileNotFoundException("文件或目录不存在");
+                 }
+                 
+                 var response = ControlMessage.CreateResponse(messageId, true, "重命名成功");
+                 await _socketServer?.BroadcastMessageAsync(response);
+                 LogService.Instance.Info($"重命名成功: {oldPath} -> {newPath}", "FileSystem");
+             }
+             catch (Exception ex)
+             {
+                 var errorResponse = ControlMessage.CreateResponse(messageId, false, $"重命名失败: {ex.Message}");
+                 await _socketServer?.BroadcastMessageAsync(errorResponse);
+                 throw;
+             }
+         }
+
+         // 上传文件操作
+         private async Task HandleUploadFileAsync(string messageId, string path, string base64Data)
+         {
+             try
+             {
+                 if (string.IsNullOrEmpty(base64Data))
+                 {
+                     throw new ArgumentException("文件数据不能为空");
+                 }
+                 
+                 var fileData = Convert.FromBase64String(base64Data);
+                 await File.WriteAllBytesAsync(path, fileData);
+                 
+                 var response = ControlMessage.CreateResponse(messageId, true, "文件上传成功");
+                 await _socketServer?.BroadcastMessageAsync(response);
+                 LogService.Instance.Info($"文件上传成功: {path}, 大小: {fileData.Length} 字节", "FileSystem");
+             }
+             catch (Exception ex)
+             {
+                 var errorResponse = ControlMessage.CreateResponse(messageId, false, $"文件上传失败: {ex.Message}");
+                 await _socketServer?.BroadcastMessageAsync(errorResponse);
+                 throw;
+             }
+         }
+
+         // 下载文件操作
+         private async Task HandleDownloadFileAsync(string messageId, string path)
+         {
+             try
+             {
+                 if (!File.Exists(path))
+                 {
+                     throw new FileNotFoundException("文件不存在");
+                 }
+                 
+                 var fileData = await File.ReadAllBytesAsync(path);
+                 var base64Data = Convert.ToBase64String(fileData);
+                 
+                 var response = new ControlMessage(messageId, "file_download", DateTime.Now, new Dictionary<string, object>
+                 {
+                     ["success"] = true,
+                     ["path"] = path,
+                     ["data"] = base64Data,
+                     ["size"] = fileData.Length
+                 });
+                 
+                 await _socketServer?.BroadcastMessageAsync(response);
+                 LogService.Instance.Info($"文件下载成功: {path}, 大小: {fileData.Length} 字节", "FileSystem");
+             }
+             catch (Exception ex)
+             {
+                 var errorResponse = ControlMessage.CreateResponse(messageId, false, $"文件下载失败: {ex.Message}");
+                 await _socketServer?.BroadcastMessageAsync(errorResponse);
+                 throw;
+             }
+         }
+
+         // 图片预览操作
+         private async Task HandleImagePreviewAsync(string messageId, string path)
+         {
+             try
+             {
+                 if (!File.Exists(path))
+                 {
+                     throw new FileNotFoundException("图片文件不存在");
+                 }
+
+                 // 检查是否为支持的图片格式
+                 var extension = Path.GetExtension(path).ToLower();
+                 var supportedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+                 
+                 if (!supportedExtensions.Contains(extension))
+                 {
+                     throw new NotSupportedException($"不支持的图片格式: {extension}");
+                 }
+
+                 // 读取图片文件并转换为Base64
+                 var imageData = await File.ReadAllBytesAsync(path);
+                 var base64Data = Convert.ToBase64String(imageData);
+
+                 LogService.Instance.Info($"图片预览处理成功: {path}, 大小: {imageData.Length} 字节", "FileSystem");
+
+                 // 发送图片预览响应
+                 var response = new
+                 {
+                     messageId = messageId,
+                     type = "image_preview_response",
+                     timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                     payload = new
+                     {
+                         success = true,
+                         path = path,
+                         imageData = base64Data,
+                         size = imageData.Length,
+                         format = extension.TrimStart('.')
+                     }
+                 };
+
+                 var responseMessage = ControlMessage.FromJson(Newtonsoft.Json.JsonConvert.SerializeObject(response));
+                 if (responseMessage != null)
+                     await _socketServer?.BroadcastMessageAsync(responseMessage)!;
+
+                 LogService.Instance.Info($"图片预览响应发送成功: {path}", "FileSystem");
+             }
+             catch (Exception ex)
+             {
+                 LogService.Instance.Error($"图片预览失败: {path}", ex, "FileSystem");
+                 
+                 // 发送错误响应
+                 var errorResponse = new
+                 {
+                     messageId = messageId,
+                     type = "image_preview_response",
+                     timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                     payload = new
+                     {
+                         success = false,
+                         error = ex.Message,
+                         path = path
+                     }
+                 };
+
+                 var errorMessage = ControlMessage.FromJson(Newtonsoft.Json.JsonConvert.SerializeObject(errorResponse));
+                 if (errorMessage != null)
+                     await _socketServer?.BroadcastMessageAsync(errorMessage)!;
+             }
+         }
 
         // 鼠标移动 - 使用相对移动
         private void MoveMouse(int deltaX, int deltaY)
@@ -1138,6 +1635,98 @@ namespace PalmControllerServer.Services
                 _volumeEndpoint = null;
                 _volumeCallback = null;
                 CoUninitialize();
+            }
+        }
+
+        // 发送硬件信息到所有客户端
+        private async Task SendHardwareInfoToClients(dynamic hardwareInfo)
+        {
+            var message = new ControlMessage(
+                messageId: DateTime.Now.Ticks.ToString(),
+                type: "hardware_info",
+                timestamp: DateTime.Now,
+                payload: new Dictionary<string, object> { ["data"] = hardwareInfo }
+            );
+            await _socketServer?.BroadcastMessageAsync(message)!;
+        }
+
+        // 发送性能数据到所有客户端
+        private async Task SendPerformanceDataToClients(dynamic performanceData)
+        {
+            var message = new ControlMessage(
+                messageId: DateTime.Now.Ticks.ToString(),
+                type: "performance_data",
+                timestamp: DateTime.Now,
+                payload: new Dictionary<string, object> { ["data"] = performanceData }
+            );
+            await _socketServer?.BroadcastMessageAsync(message)!;
+        }
+
+        // 处理定时任务
+        private void HandleDelayedAction(ControlMessage message, string actionType)
+        {
+            try
+            {
+                var delay = 300; // 默认5分钟
+                if (message.Payload.ContainsKey("delay") && int.TryParse(message.Payload["delay"]?.ToString(), out int parsedDelay))
+                {
+                    delay = parsedDelay;
+                }
+
+                // 使用Windows任务计划程序或内置延迟命令
+                string command = actionType switch
+                {
+                    "shutdown" => $"shutdown /s /t {delay}",
+                    "restart" => $"shutdown /r /t {delay}",
+                    "lock" => $"schtasks /create /sc once /tn \"PalmController_Lock_{DateTime.Now.Ticks}\" /tr \"rundll32.exe user32.dll,LockWorkStation\" /st {DateTime.Now.AddSeconds(delay):HH:mm:ss} /f",
+                    _ => throw new ArgumentException($"Unknown delayed action: {actionType}")
+                };
+
+                ExecuteSystemCommand(command);
+                LogService.Instance.Info($"Scheduled {actionType} task set for {delay} seconds", "SystemControl");
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Error($"Failed to schedule {actionType} task", ex, "SystemControl");
+            }
+        }
+
+        // 处理运行命令
+        private void HandleRunCommand(ControlMessage message)
+        {
+            try
+            {
+                var command = message.Payload.GetValueOrDefault("command")?.ToString();
+                if (string.IsNullOrEmpty(command))
+                {
+                    LogService.Instance.Warning("Run command request without command parameter", "SystemControl");
+                    return;
+                }
+
+                // 安全过滤：只允许预定义的安全命令
+                var safeCommands = new Dictionary<string, string>
+                {
+                    {"cleanmgr /sagerun:1", "磁盘清理"},
+                    {"sfc /scannow", "系统文件检查"},
+                    {"netsh winsock reset", "网络重置"},
+                    {"ipconfig /flushdns", "DNS缓存清理"},
+                    {"msinfo32", "系统信息"},
+                    {"taskmgr", "任务管理器"}
+                };
+
+                if (safeCommands.ContainsKey(command))
+                {
+                    ExecuteSystemCommand(command);
+                    LogService.Instance.Info($"Executed safe command: {command} ({safeCommands[command]})", "SystemControl");
+                }
+                else
+                {
+                    LogService.Instance.Warning($"Blocked unsafe command: {command}", "SystemControl");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Error("Failed to execute command", ex, "SystemControl");
             }
         }
 

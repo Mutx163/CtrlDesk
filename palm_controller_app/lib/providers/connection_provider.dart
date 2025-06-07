@@ -134,12 +134,15 @@ class ConnectionConfigNotifier extends StateNotifier<List<ConnectionConfig>> {
 
   // 更新连接时间或添加新配置（解决设备发现连接的BadStateNoElement问题）
   Future<void> updateOrAddConfig(ConnectionConfig config) async {
-    try {
-      // 尝试找到现有配置并更新时间
-      final existingConfig = state.firstWhere((c) => c.id == config.id);
+    // 使用更安全的查找方式，避免firstWhere抛出异常
+    final existingConfigIndex = state.indexWhere((c) => c.id == config.id);
+    
+    if (existingConfigIndex != -1) {
+      // 配置存在，更新连接时间
+      final existingConfig = state[existingConfigIndex];
       final updatedConfig = existingConfig.copyWith(lastConnected: DateTime.now());
       await updateConfig(updatedConfig);
-    } catch (e) {
+    } else {
       // 配置不存在，添加新配置（常见于设备发现连接）
       await addConfig(config.copyWith(lastConnected: DateTime.now()));
     }
@@ -231,8 +234,10 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
   ConnectionStatus? _lastConnectionStatus; // 记录上一次的连接状态
 
   VolumeStateNotifier(this._ref) : super(VolumeState(volume: null, isMuted: false)) {
+    print('🔊 VolumeStateNotifier初始化开始');
     _subscribeToMessages();
     _listenToConnectionStatus();
+    print('🔊 VolumeStateNotifier初始化完成');
   }
 
   void _listenToConnectionStatus() {
@@ -260,22 +265,32 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
     // Use _ref.read to get SocketService instance
     final socketService = _ref.read(socketServiceProvider);
     _messageSubscription = socketService.messageStream.listen((message) {
+      print('🔊 VolumeStateNotifier收到消息: 类型=${message.type}');
       if (message.type == 'volume_status') {
+        print('🔊 处理音量状态消息: ${message.payload}');
         _handleVolumeStatusMessage(message);
+      } else {
+        print('🔊 忽略非音量消息: ${message.type}');
       }
     });
   }
 
   void _handleVolumeStatusMessage(ControlMessage message) {
     try {
+      print('🔊 解析音量消息payload: ${message.payload}');
       if (message.payload['volume'] != null) {
         final newVolume = (message.payload['volume'] as num).toDouble();
         final newMuteState = message.payload['muted'] as bool? ?? false;
+        print('🔊 音量数据: volume=$newVolume, muted=$newMuteState');
         if (mounted) {
           state = state.copyWith(volume: newVolume, isMuted: newMuteState);
+          print('🔊 音量状态已更新: $state');
         }
+      } else {
+        print('🔊 音量消息缺少volume字段');
       }
     } catch (e) {
+      print('🔊 音量消息解析错误: $e');
       LogService.instance.error('Error parsing volume_status: $e', category: 'VolumeState');
     }
   }

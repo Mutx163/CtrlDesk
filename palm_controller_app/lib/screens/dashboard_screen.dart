@@ -3,13 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
+
 import '../models/control_message.dart';
 import '../providers/connection_provider.dart';
 import '../providers/monitor_provider.dart';
 import '../services/socket_service.dart';
-import 'computer_status_screen.dart';
 import 'connect_screen.dart';
 import '../widgets/connection_quality_indicator.dart';
+import '../services/log_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -32,11 +34,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _requestInitialData() {
-    if (ref.read(connectionStatusProvider) == ConnectionStatus.connected) {
-      _requestVolumeStatus();
-      // 未来可以添加请求其他初始数据的逻辑
-    }
+    // 连接时延迟一点时间再请求初始数据，确保连接稳定
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted && ref.read(connectionStatusProvider) == ConnectionStatus.connected) {
+        _requestSystemStatus(); // 重新启用系统状态请求
+      }
+    });
   }
+  
+  void _requestSystemStatus() {
+    final message = ControlMessage.systemControl(
+      messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+      action: 'get_system_status',
+    );
+    _sendControlMessage(message);
+  }
+  
+  // 首页不再维护定时刷新，避免与电脑状态页面冲突
 
   @override
   void dispose() {
@@ -45,8 +59,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
   
   void _sendControlMessage(ControlMessage message) {
-    ref.read(socketServiceProvider).sendMessage(message);
-    HapticFeedback.lightImpact();
+    final connectionStatus = ref.read(connectionStatusProvider);
+    print('🔍 发送控制消息 - 连接状态: $connectionStatus, 消息类型: ${message.type}, 动作: ${message.payload['action']}');
+    
+    if (connectionStatus == ConnectionStatus.connected) {
+      ref.read(socketServiceProvider).sendMessage(message).then((success) {
+        print('📤 消息发送结果: $success, 消息: ${message.type}-${message.payload['action']}');
+        if (success && mounted) {
+          HapticFeedback.lightImpact();
+        }
+      }).catchError((e) {
+        // 详细错误记录
+        print('❌ 发送控制消息失败: $e, 消息类型: ${message.type}');
+      });
+    } else {
+      print('⚠️ 连接状态异常，无法发送消息: $connectionStatus');
+    }
   }
 
   void _setSystemVolume(double volume) {
@@ -118,8 +146,140 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  void _showScheduledTaskDialog() {
+    final List<Map<String, dynamic>> tasks = [
+      {'name': '5分钟后关机', 'action': 'shutdown_delayed', 'params': {'delay': 300}},
+      {'name': '10分钟后关机', 'action': 'shutdown_delayed', 'params': {'delay': 600}},
+      {'name': '30分钟后关机', 'action': 'shutdown_delayed', 'params': {'delay': 1800}},
+      {'name': '1小时后关机', 'action': 'shutdown_delayed', 'params': {'delay': 3600}},
+      {'name': '定时重启（10分钟）', 'action': 'restart_delayed', 'params': {'delay': 600}},
+      {'name': '定时锁屏（5分钟）', 'action': 'lock_delayed', 'params': {'delay': 300}},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('定时任务', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+          content: SizedBox(
+            width: 300,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: tasks.map((task) => ListTile(
+                leading: Icon(Icons.schedule, color: Theme.of(context).colorScheme.primary),
+                title: Text(task['name']),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _executeScheduledTask(task);
+                },
+              )).toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('取消', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(180))),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showRunScriptDialog() {
+    final List<Map<String, dynamic>> scripts = [
+      {'name': '清理系统垃圾', 'command': 'cleanmgr /sagerun:1', 'description': '运行磁盘清理工具'},
+      {'name': '系统文件检查', 'command': 'sfc /scannow', 'description': '检查并修复系统文件'},
+      {'name': '网络诊断重置', 'command': 'netsh winsock reset', 'description': '重置网络设置'},
+      {'name': '刷新DNS缓存', 'command': 'ipconfig /flushdns', 'description': '清理DNS缓存'},
+      {'name': '查看系统信息', 'command': 'msinfo32', 'description': '打开系统信息窗口'},
+      {'name': '任务管理器', 'command': 'taskmgr', 'description': '打开任务管理器'},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('运行脚本', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+          content: SizedBox(
+            width: 300,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: scripts.map((script) => ListTile(
+                leading: Icon(Icons.terminal, color: Theme.of(context).colorScheme.primary),
+                title: Text(script['name']),
+                subtitle: Text(script['description'], style: Theme.of(context).textTheme.bodySmall),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _executeScript(script);
+                },
+              )).toList(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              child: Text('取消', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(180))),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _executeScheduledTask(Map<String, dynamic> task) {
+    final message = ControlMessage(
+      messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: 'system_control',
+      timestamp: DateTime.now(),
+      payload: {
+        'action': task['action'],
+        ...task['params'],
+      },
+    );
+    _sendControlMessage(message);
+    
+    // 显示确认消息
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('定时任务已设置：${task['name']}'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
+  void _executeScript(Map<String, dynamic> script) {
+    final message = ControlMessage(
+      messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: 'system_control',
+      timestamp: DateTime.now(),
+      payload: {
+        'action': 'run_command',
+        'command': script['command'],
+      },
+    );
+    _sendControlMessage(message);
+    
+    // 显示确认消息
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('正在执行：${script['name']}'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final connectionStatus = ref.watch(connectionStatusProvider);
+    final volumeState = ref.watch(volumeStateProvider);
+    final theme = Theme.of(context);
+
+    // 添加调试信息显示
+    print('🏠 DashboardScreen build - 连接状态: $connectionStatus');
+
     // 监听来自服务器的音量状态更新。
     // 根据Riverpod规则，必须在build方法中调用ref.listen。
     ref.listen<VolumeState>(volumeStateProvider, (previous, next) {
@@ -138,11 +298,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     });
 
-    final connectionStatus = ref.watch(connectionStatusProvider);
+    // 首页不再监听刷新设置变化，电脑状态页面自己管理
+
     final performanceData = ref.watch(performanceDataProvider);
-    final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    final volumeState = ref.watch(volumeStateProvider);
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
@@ -180,23 +339,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           )
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ComputerStatusScreen()),
-              );
-            },
-            child: _buildSystemStatusCard(context, performanceData),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            if (connectionStatus == ConnectionStatus.connected) {
+              _requestSystemStatus();
+              _requestVolumeStatus();
+            }
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    print('点击电脑状态卡片，使用GoRouter导航...');
+                    context.push('/computer-status');
+                  },
+                  child: _buildSystemStatusCard(context, performanceData),
+                ),
+                const SizedBox(height: 16),
+                _buildVolumeControlCard(context, volumeState),
+                const SizedBox(height: 16),
+                _buildQuickActionsCard(context),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          _buildVolumeControlCard(context, volumeState),
-          const SizedBox(height: 16),
-          _buildQuickActionsCard(context),
-        ],
+        ),
       ),
     );
   }
@@ -247,6 +418,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     // 当没有从PC获取到任何值时，控件处于禁用状态
     final bool isDisabled = volumeState.volume == null;
+
+    // 添加调试信息
+    print('🏠 首页音量卡片构建: volume=${volumeState.volume}, localVolume=$_localVolume, displayVolume=$displayVolume, isDisabled=$isDisabled, isMuted=${volumeState.isMuted}');
 
     return Card(
       child: Padding(
@@ -315,12 +489,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
               children: [
-                _buildActionItem(context, FontAwesomeIcons.cameraRetro, '截屏', Colors.blue, () => _sendSystemControl('screenshot')),
-                _buildActionItem(context, FontAwesomeIcons.clock, '定时任务', Colors.purple, () {}), // Placeholder
+                _buildActionItem(context, FontAwesomeIcons.cameraRetro, '截屏', Colors.blue, () => _sendSystemControl('screenshot_fullscreen')),
+                _buildActionItem(context, FontAwesomeIcons.clock, '定时任务', Colors.purple, () => _showScheduledTaskDialog()),
                 _buildActionItem(context, FontAwesomeIcons.lock, '锁屏', Colors.indigo, () => _sendSystemControl('lock')),
                 _buildActionItem(context, FontAwesomeIcons.bellSlash, '静音', Colors.grey, () => _sendControlMessage(ControlMessage.mediaControl(action: 'mute', messageId: ''))),
                 _buildActionItem(context, FontAwesomeIcons.paste, '剪贴板', Colors.green, () => _sendShortcut('v', modifiers: ['ctrl'])),
-                _buildActionItem(context, FontAwesomeIcons.scroll, '运行脚本', Colors.teal, () {}), // Placeholder
+                _buildActionItem(context, FontAwesomeIcons.scroll, '运行脚本', Colors.teal, () => _showRunScriptDialog()),
                 _buildActionItem(context, FontAwesomeIcons.magnifyingGlassLocation, '找光标', Colors.amber, () => _sendSystemControl('find_cursor')),
                 _buildActionItem(context, FontAwesomeIcons.powerOff, '关机', Colors.red, () => _showConfirmationDialog('关机', () => _sendSystemControl('shutdown'))),
               ],

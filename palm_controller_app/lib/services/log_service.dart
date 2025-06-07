@@ -124,6 +124,64 @@ class FileOutput extends LogOutput {
   }
 }
 
+/// 日志过滤配置
+class LogFilter {
+  final Set<String> enabledCategories;
+  final Set<LogLevel> enabledLevels;
+  final Set<String> blockedCategories;
+  final bool debugMode;
+
+  LogFilter({
+    Set<String>? enabledCategories,
+    Set<LogLevel>? enabledLevels,
+    Set<String>? blockedCategories,
+    this.debugMode = false,
+  }) : 
+    enabledCategories = enabledCategories ?? <String>{},
+    enabledLevels = enabledLevels ?? LogLevel.values.toSet(),
+    blockedCategories = blockedCategories ?? <String>{};
+
+  bool shouldLog(LogLevel level, String category) {
+    // 调试模式下显示所有日志
+    if (debugMode) return true;
+    
+    // 检查是否被明确阻止
+    if (blockedCategories.contains(category)) return false;
+    
+    // 检查级别过滤
+    if (!enabledLevels.contains(level)) return false;
+    
+    // 如果设置了特定类别，只显示这些类别
+    if (enabledCategories.isNotEmpty && !enabledCategories.contains(category)) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  // 预设过滤模式
+  static LogFilter get allLogs => LogFilter(debugMode: true);
+  
+  static LogFilter get productionMode => LogFilter(
+    enabledLevels: {LogLevel.warning, LogLevel.error, LogLevel.fatal},
+    blockedCategories: {'Discovery', 'Socket'},
+  );
+  
+  static LogFilter get networkOnlyMode => LogFilter(
+    enabledCategories: {'Network', 'Socket'},
+  );
+  
+  static LogFilter get userActionOnlyMode => LogFilter(
+    enabledCategories: {'UserAction', 'App'},
+    enabledLevels: {LogLevel.info, LogLevel.warning, LogLevel.error, LogLevel.fatal},
+  );
+  
+  static LogFilter get quietDiscoveryMode => LogFilter(
+    blockedCategories: {'Discovery'},
+    enabledLevels: {LogLevel.info, LogLevel.warning, LogLevel.error, LogLevel.fatal},
+  );
+}
+
 /// 统一日志服务
 class LogService {
   static LogService? _instance;
@@ -132,7 +190,8 @@ class LogService {
   Logger? _logger;
   late String _sessionId;
   String? _userId;
-  
+  LogFilter _filter = LogFilter.quietDiscoveryMode; // 默认使用安静发现模式
+
   LogService._internal() {
     _sessionId = DateTime.now().millisecondsSinceEpoch.toString();
     // 创建临时控制台logger
@@ -180,6 +239,27 @@ class LogService {
   /// 设置用户ID
   void setUserId(String? userId) {
     _userId = userId;
+  }
+
+  /// 设置日志过滤器
+  void setFilter(LogFilter filter) {
+    _filter = filter;
+    info('日志过滤器已更新', category: 'LogService');
+  }
+
+  /// 快速切换到调试模式（显示所有日志）
+  void enableDebugMode() {
+    setFilter(LogFilter.allLogs);
+  }
+
+  /// 快速切换到生产模式（只显示重要日志）
+  void enableProductionMode() {
+    setFilter(LogFilter.productionMode);
+  }
+
+  /// 快速切换到安静发现模式（隐藏UDP广播日志）
+  void enableQuietDiscoveryMode() {
+    setFilter(LogFilter.quietDiscoveryMode);
   }
 
   /// Debug日志
@@ -319,6 +399,11 @@ class LogService {
     Map<String, dynamic>? metadata,
     String? stackTrace,
   }) {
+    // 应用过滤器
+    if (!_filter.shouldLog(level, category)) {
+      return;
+    }
+
     final entry = LogEntry(
       timestamp: DateTime.now(),
       level: level,

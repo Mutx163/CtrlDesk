@@ -137,24 +137,57 @@ class SocketService {
 
   // 发送消息
   Future<bool> sendMessage(ControlMessage message) async {
+    print('🚀 SocketService.sendMessage() 开始 - 消息: ${message.type}, 当前状态: $_currentStatus');
+    
+    // 严格检查连接状态
     if (_socket == null || _currentStatus != ConnectionStatus.connected) {
+      print('❌ 连接检查失败 - Socket: ${_socket != null ? '存在' : '空'}, 状态: $_currentStatus');
       return false;
     }
 
     try {
+      // 多重检查确保Socket可用
+      final socket = _socket;
+      if (socket == null) {
+        print('❌ Socket为空，无法发送消息');
+        return false;
+      }
+      
+      // 检查Socket是否真的处于连接状态
+      try {
+        final remoteAddress = socket.remoteAddress;
+        final remotePort = socket.remotePort;
+        print('✅ Socket连接正常 - 地址: ${remoteAddress.address}:$remotePort');
+        // 如果能获取到地址和端口，说明连接正常
+      } catch (e) {
+        // 如果获取地址失败，说明连接已断开
+        print('❌ Socket状态异常: $e');
+        _updateStatus(ConnectionStatus.error);
+        return false;
+      }
+      
       final jsonString = jsonEncode(message.toJson());
       final data = utf8.encode('$jsonString\n');
       
       LogService.instance.socketConnection(
         action: 'send',
-        host: _socket!.remoteAddress.address,
-        port: _socket!.remotePort,
+        host: socket.remoteAddress.address,
+        port: socket.remotePort,
         messageType: message.type,
         dataSize: data.length,
       );
       
-      _socket!.add(data);
-      await _socket!.flush();
+      // 直接尝试写入，如果失败立即捕获
+      try {
+        socket.add(data);
+        await socket.flush();
+        print('✅ 消息发送成功: ${message.type}');
+      } catch (writeError) {
+        // 写入失败，立即标记连接错误
+        print('❌ 写入数据失败: $writeError');
+        _updateStatus(ConnectionStatus.error);
+        throw writeError; // 重新抛出让外层catch处理
+      }
       
       if (_currentStatus == ConnectionStatus.error) {
         LogService.instance.info('消息发送成功，连接状态已恢复', category: 'Socket');
@@ -164,6 +197,7 @@ class SocketService {
       return true;
     } catch (e) {
       _lastError = e.toString();
+      print('❌ 发送消息异常: $e');
       
       if (_socket == null || 
           e.toString().contains('Broken pipe') || 
@@ -243,16 +277,57 @@ class SocketService {
   void _onDataReceived(List<int> data) {
     try {
       final message = utf8.decode(data);
+      print('📨 Socket接收到原始数据: ${message.replaceAll('\n', '\\n')}');
+      
       final lines = message.split('\n');
       for (final line in lines) {
-        if (line.trim().isNotEmpty) {
-          final json = jsonDecode(line);
-          final controlMessage = ControlMessage.fromJson(json);
-          _messageController.add(controlMessage);
+        final trimmedLine = line.trim();
+        if (trimmedLine.isNotEmpty) {
+          print('📝 解析消息行: $trimmedLine');
+          
+          // 增加JSON解析的安全检查
+          try {
+            // 检查是否是有效的JSON格式
+            if (!trimmedLine.startsWith('{') || !trimmedLine.endsWith('}')) {
+              print('⚠️ 跳过非JSON格式数据: $trimmedLine');
+              continue;
+            }
+            
+            final json = jsonDecode(trimmedLine);
+            
+            // 验证JSON是否包含必要字段
+            if (json is! Map<String, dynamic>) {
+              print('⚠️ JSON不是对象格式: $trimmedLine');
+              continue;
+            }
+            
+            // 检查必要字段
+            if (!json.containsKey('type') || !json.containsKey('messageId')) {
+              print('⚠️ JSON缺少必要字段: $trimmedLine');
+              continue;
+            }
+            
+            final controlMessage = ControlMessage.fromJson(json);
+            print('✅ 成功解析消息: 类型=${controlMessage.type}, payload=${controlMessage.payload}');
+            _messageController.add(controlMessage);
+            
+          } catch (lineError) {
+            print('❌ 解析单行JSON失败: $lineError, 原始数据: $trimmedLine');
+            // 继续处理其他行，不中断整个数据处理流程
+            continue;
+          }
         }
       }
     } catch (e) {
       _lastError = 'Failed to parse message: $e';
+      print('❌ 消息解析失败: $e');
+      
+      // 增加详细的错误信息
+      if (e.toString().contains('FormatException')) {
+        print('🔍 JSON格式错误详情: 可能是服务端发送了非JSON数据或数据不完整');
+      } else if (e.toString().contains('utf8')) {
+        print('🔍 编码错误详情: 数据可能包含无效的UTF-8字符');
+      }
     }
   }
 
