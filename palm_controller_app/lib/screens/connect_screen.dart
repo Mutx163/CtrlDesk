@@ -59,25 +59,34 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
       curve: Curves.easeInOut,
     ));
     
-    // 设置连接成功后的导航回调
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref.read(connectionManagerProvider.notifier).setNavigationCallback(() {
-          if (mounted && context.canPop()) {
+      if (!mounted) return; // 安全检查：Widget是否仍然mounted
+      
+      // 设置导航回调 - 使用安全的context访问模式
+      ref.read(connectionManagerProvider.notifier).setNavigationCallback(() {
+        // 双重安全检查：mounted状态和context有效性
+        if (!mounted) return;
+        if (!context.mounted) return;
+        
+        try {
+          if (context.canPop()) {
             // 如果可以返回，说明是从其他页面进入的连接页面，直接返回
             context.pop();
           } else {
             // 否则导航到控制界面
             context.go('/');
           }
-        });
-        
-        // 检查权限状态，决定是否显示权限卡片
-        _checkPermissionStatus();
-        
-        // 开始实时设备发现
-        _startRealTimeDiscovery();
-      }
+        } catch (e) {
+          // 捕获context访问异常，记录但不中断程序
+          LogService.instance.error('Navigation callback context access error: $e', category: 'Connect');
+        }
+      });
+      
+      // 检查权限状态，决定是否显示权限卡片
+      _checkPermissionStatus();
+      
+      // 开始实时设备发现
+      _startRealTimeDiscovery();
     });
   }
 
@@ -112,26 +121,32 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
       setState(() {
         _showPermissionCard = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('权限已授予，设备发现功能已启用'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      // 安全的SnackBar显示
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('权限已授予，设备发现功能已启用'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
       // 权限获取后重新开始实时扫描
       _startRealTimeDiscovery();
     } else if (status == PermissionStatus.permanentlyDenied) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('权限被永久拒绝，请在设置中手动开启位置权限'),
-          action: SnackBarAction(
-            label: '打开设置',
-            onPressed: () => openAppSettings(),
+      // 安全的权限拒绝提示
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('权限被永久拒绝，请在设置中手动开启位置权限'),
+            action: SnackBarAction(
+              label: '打开设置',
+              onPressed: () => openAppSettings(),
+            ),
+            duration: const Duration(seconds: 4),
           ),
-          duration: const Duration(seconds: 4),
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -192,7 +207,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
   // 手动刷新设备列表
   Future<void> _refreshDevices() async {
     await _performSingleScan();
-    if (mounted) {
+    // 安全的刷新结果提示
+    if (mounted && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('发现 ${_discoveredDevices.length} 个设备'),
@@ -204,7 +220,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
 
   // 连接到发现的设备
   Future<void> _connectToDiscoveredDevice(DiscoveredDevice device) async {
-    if (_isConnecting) return;
+    if (_isConnecting || !mounted) return; // 增加mounted检查
 
     setState(() {
       _isConnecting = true;
@@ -216,11 +232,14 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
       LogService.instance.info('尝试连接到发现的设备: ${device.hostName} (${device.ipAddress})', category: 'Connect');
       
       await ref.read(connectionManagerProvider.notifier).connect(config);
+      
+      // 等待连接结果，但添加超时保护
       final result = ref.read(connectionManagerProvider);
       
       if (result.value == true) {
         LogService.instance.info('连接成功: ${device.hostName}', category: 'Connect');
-        if (mounted) {
+        // 安全的SnackBar显示 - 检查mounted和context状态
+        if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('已连接到 ${device.hostName}'),
@@ -229,7 +248,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
           );
         }
       } else {
-        if (mounted) {
+        // 安全的错误提示
+        if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('连接失败: ${device.hostName}'),
@@ -240,7 +260,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
       }
     } catch (e) {
       LogService.instance.error('连接异常: $e', category: 'Connect');
-      if (mounted) {
+      // 安全的异常提示
+      if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('连接异常: $e'),
@@ -249,6 +270,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
         );
       }
     } finally {
+      // 最终清理状态时也要检查mounted
       if (mounted) {
         setState(() {
           _isConnecting = false;
@@ -260,7 +282,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
 
   // 手动连接
   Future<void> _connectManually() async {
-    if (!_formKey.currentState!.validate() || _isConnecting) return;
+    if (!_formKey.currentState!.validate() || _isConnecting || !mounted) return; // 增加mounted检查
 
     setState(() {
       _isConnecting = true;
@@ -286,7 +308,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
       
       if (result.value == true) {
         LogService.instance.info('手动连接成功: ${config.name}', category: 'Connect');
-        if (mounted) {
+        // 安全的成功提示和界面操作
+        if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('已连接到 ${config.name}'),
@@ -297,7 +320,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
           _toggleManualForm();
         }
       } else {
-        if (mounted) {
+        // 安全的失败提示
+        if (mounted && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('连接失败: ${config.name}'),
@@ -308,7 +332,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
       }
     } catch (e) {
       LogService.instance.error('手动连接异常: $e', category: 'Connect');
-      if (mounted) {
+      // 安全的异常提示
+      if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('连接异常: $e'),
@@ -317,6 +342,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
         );
       }
     } finally {
+      // 安全的状态清理
       if (mounted) {
         setState(() {
           _isConnecting = false;
@@ -329,7 +355,8 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> with TickerProvid
   Future<void> _disconnect() async {
     try {
       await ref.read(connectionManagerProvider.notifier).disconnect();
-      if (mounted) {
+      // 安全的断开连接提示
+      if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('已断开连接'),

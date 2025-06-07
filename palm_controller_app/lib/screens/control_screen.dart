@@ -412,8 +412,7 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     final volumeState = ref.watch(volumeStateProvider);
     final volume = volumeState.volume ?? 0.0;
 
-    // 添加调试信息
-    print('🎵 媒体页面音量控制构建: volume=${volumeState.volume}, displayVolume=$volume, isMuted=${volumeState.isMuted}');
+    // 移除冗余调试信息
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

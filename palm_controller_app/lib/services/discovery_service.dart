@@ -345,14 +345,20 @@ class DiscoveryService {
         });
         
         // 在网段之间添加小延迟，避免网络拥塞
-        await Future.delayed(const Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 25)); // 减少延迟
       }
       
+      // 统计和分析结果
       LogService.instance.info('UDP广播完成: 成功 $successCount 个网段, 失败 $failureCount 个网段', category: 'Discovery');
       
+      // 智能降级处理
       if (successCount == 0 && failureCount > 0) {
-        LogService.instance.warning('所有UDP广播都失败了，可能存在网络或权限问题', category: 'Discovery');
-        // 不再直接禁用权限，而是继续尝试
+        LogService.instance.warning('所有UDP广播都失败了，启用降级模式', category: 'Discovery');
+        
+        // 降级策略：只尝试最常见的网段
+        await _tryFallbackDiscovery(socket, data);
+      } else if (successCount > 0) {
+        LogService.instance.info('UDP广播部分成功，发现功能正常', category: 'Discovery');
       }
     } catch (e) {
       LogService.instance.error('UDP广播发送失败: $e', category: 'Discovery');
@@ -361,10 +367,64 @@ class DiscoveryService {
       if (e.toString().contains('Permission denied') || e.toString().contains('errno = 13')) {
         LogService.instance.error('UDP权限被拒绝，设备发现功能将受限', category: 'Discovery');
         _hasRequiredPermissions = false;
+        
+        // 尝试降级到手动扫描模式
+        await _tryManualNetworkScan();
       }
     }
   }
 
+  // 降级发现策略：只尝试最核心的网段
+  Future<void> _tryFallbackDiscovery(RawDatagramSocket socket, List<int> data) async {
+    LogService.instance.info('启动降级发现模式，尝试核心网段', category: 'Discovery');
+    
+    // 只尝试最常见的网段
+    final fallbackPrefixes = ['192.168.1', '192.168.0', '10.0.0'];
+    int fallbackSuccess = 0;
+    
+    for (final prefix in fallbackPrefixes) {
+      try {
+        await _sendToSpecificNetworkWithSocket(socket, prefix, data, (success) {
+          if (success) fallbackSuccess++;
+        });
+        
+        await Future.delayed(const Duration(milliseconds: 100));
+      } catch (e) {
+        LogService.instance.debug('降级发现网段 $prefix 失败: $e', category: 'Discovery');
+      }
+    }
+    
+    if (fallbackSuccess > 0) {
+      LogService.instance.info('降级发现部分成功: $fallbackSuccess/${fallbackPrefixes.length}', category: 'Discovery');
+    } else {
+      LogService.instance.warning('降级发现也失败，建议使用手动连接', category: 'Discovery');
+    }
+  }
+
+  // 手动网络扫描（不依赖UDP广播）
+  Future<void> _tryManualNetworkScan() async {
+    LogService.instance.info('启动手动网络扫描模式', category: 'Discovery');
+    
+    try {
+      // 获取当前设备IP，推测网段
+      final interfaces = await NetworkInterface.list(includeLoopback: false, type: InternetAddressType.IPv4);
+      
+      for (final interface in interfaces) {
+        for (final addr in interface.addresses) {
+          if (addr.type == InternetAddressType.IPv4) {
+            final ip = addr.address;
+            final parts = ip.split('.');
+            if (parts.length == 4) {
+              final networkPrefix = '${parts[0]}.${parts[1]}.${parts[2]}';
+              LogService.instance.info('检测到设备网段: $networkPrefix，建议手动连接到此网段的PC', category: 'Discovery');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      LogService.instance.warning('手动网络扫描失败: $e', category: 'Discovery');
+    }
+  }
 
   // 使用指定socket向特定网段发送UDP广播
   Future<void> _sendToSpecificNetworkWithSocket(RawDatagramSocket socket, String prefix, List<int> data, Function(bool) onResult) async {
@@ -374,32 +434,47 @@ class DiscoveryService {
       final broadcastAddress = '$prefix.255';
       final address = InternetAddress(broadcastAddress);
       
-      // 尝试发送UDP广播，最多重试3次
-      for (int attempt = 1; attempt <= 3; attempt++) {
+      // 预检查：验证地址有效性
+      if (!_isValidBroadcastAddress(broadcastAddress)) {
+        LogService.instance.debug('跳过无效广播地址: $broadcastAddress', category: 'Discovery');
+        onResult(false);
+        return;
+      }
+      
+      // 尝试发送UDP广播，使用保守的重试策略
+      for (int attempt = 1; attempt <= 2; attempt++) { // 降为2次重试，减少延迟
         try {
           final bytesSent = socket.send(data, address, discoveryPort);
           
           if (bytesSent > 0) {
-            LogService.instance.debug('UDP广播发送成功 (尝试 $attempt/3): $broadcastAddress:$discoveryPort ($bytesSent bytes)', category: 'Discovery');
+            LogService.instance.debug('UDP广播发送成功: $broadcastAddress:$discoveryPort ($bytesSent bytes)', category: 'Discovery');
             success = true;
             break;
           } else {
-            LogService.instance.debug('UDP广播发送失败 (尝试 $attempt/3): $broadcastAddress:$discoveryPort (0 bytes sent)', category: 'Discovery');
-            if (attempt < 3) {
-              await Future.delayed(Duration(milliseconds: 100 * attempt)); // 递增延迟
+            LogService.instance.debug('UDP广播发送失败 (尝试 $attempt/2): $broadcastAddress - 0 bytes sent', category: 'Discovery');
+            if (attempt < 2) {
+              await Future.delayed(Duration(milliseconds: 50 * attempt)); // 减少延迟时间
             }
           }
-        } catch (e) {
-          LogService.instance.debug('UDP发送异常 (尝试 $attempt/3): $prefix.255 - $e', category: 'Discovery');
+        } on SocketException catch (e) {
+          LogService.instance.debug('UDP发送Socket异常 (尝试 $attempt/2): $prefix.255 - ${e.message}', category: 'Discovery');
           
-          // 如果是权限错误，记录但继续尝试其他网段
-          if (e.toString().contains('Permission denied') || e.toString().contains('errno = 13')) {
-            LogService.instance.warning('检测到权限被拒绝: $prefix.255', category: 'Discovery');
+          // 分类处理Socket异常
+          if (_isPermissionError(e)) {
+            LogService.instance.warning('UDP权限被拒绝: $prefix.255，将跳过此网段', category: 'Discovery');
             break; // 权限错误不需要重试
+          } else if (_isNetworkError(e)) {
+            LogService.instance.debug('网络错误: $prefix.255，将继续尝试其他网段', category: 'Discovery');
+            break; // 网络错误也不重试，避免浪费时间
           }
           
-          if (attempt < 3) {
-            await Future.delayed(Duration(milliseconds: 100 * attempt));
+          if (attempt < 2) {
+            await Future.delayed(Duration(milliseconds: 50 * attempt));
+          }
+        } catch (e) {
+          LogService.instance.debug('UDP发送未知异常 (尝试 $attempt/2): $prefix.255 - $e', category: 'Discovery');
+          if (attempt < 2) {
+            await Future.delayed(Duration(milliseconds: 50 * attempt));
           }
         }
       }
@@ -408,6 +483,44 @@ class DiscoveryService {
     }
     
     onResult(success);
+  }
+
+  // 验证广播地址有效性
+  bool _isValidBroadcastAddress(String address) {
+    try {
+      final parts = address.split('.');
+      if (parts.length != 4) return false;
+      
+      // 检查每部分是否为有效数字
+      for (final part in parts) {
+        final num = int.tryParse(part);
+        if (num == null || num < 0 || num > 255) return false;
+      }
+      
+      // 检查是否为有效的广播地址格式 (x.x.x.255)
+      return parts[3] == '255';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 判断是否为权限相关错误
+  bool _isPermissionError(SocketException e) {
+    final message = e.message.toLowerCase();
+    return message.contains('permission denied') ||
+           message.contains('errno = 13') ||
+           message.contains('operation not permitted') ||
+           message.contains('errno = 1');
+  }
+
+  // 判断是否为网络相关错误
+  bool _isNetworkError(SocketException e) {
+    final message = e.message.toLowerCase();
+    return message.contains('network is unreachable') ||
+           message.contains('no route to host') ||
+           message.contains('address not available') ||
+           message.contains('errno = 10049') ||
+           message.contains('errno = 99');
   }
 
   // 获取当前网络前缀（用于广播）

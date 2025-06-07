@@ -82,13 +82,21 @@ class FileService {
   }
 
   /// 获取PC端文件列表
-  Future<List<FileItem>> getPCFiles([String? directoryPath]) async {
-    try {
+  Future<List<FileItem>> getPCFiles(String? directoryPath) async {
+        try {
+      _logService.debug('开始获取PC文件列表: $directoryPath', category: 'FileService');
+      
+      // 检查连接状态
+      if (_socketService.currentStatus != ConnectionStatus.connected) {
+        _logService.warning('未连接到PC端，无法获取文件列表', category: 'FileService');
+        return [];
+      }
+      
       final message = ControlMessage.fileOperation(
-        operation: 'list_files',
-        path: directoryPath ?? '',
-        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
-      );
+         operation: 'list_files',
+         path: directoryPath ?? '',
+         messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+       );
 
       print('🔥🔥🔥 [FILE_DEBUG] 准备发送PC文件列表请求: path=$directoryPath, messageId=${message.messageId}');
       
@@ -96,25 +104,35 @@ class FileService {
       final success = await _socketService.sendMessage(message);
       if (!success) {
         print('🔥🔥🔥 [FILE_DEBUG] 发送文件列表请求失败!!!');
-        throw Exception('无法连接到PC端服务器');
+        _logService.warning('无法发送PC文件列表请求，连接可能已断开', category: 'FileService');
+        return [];
       }
       
       print('🔥🔥🔥 [FILE_DEBUG] 文件列表请求发送成功，开始等待响应...');
 
-      // 等待文件列表响应
-      final response = await _waitForFileListResponse(message.messageId);
-      if (response != null) {
-        return _parseFileListResponse(response);
-      } else {
-        throw Exception('PC端响应超时，请检查连接状态');
+      // 等待文件列表响应，增加异常安全处理
+      try {
+        final response = await _waitForFileListResponse(message.messageId);
+        if (response != null) {
+          final files = _parseFileListResponse(response);
+          _logService.info('成功获取PC文件列表: ${files.length}个项目', category: 'FileService');
+          return files;
+        } else {
+          _logService.warning('PC端文件列表响应超时，请检查连接状态', category: 'FileService');
+          return [];
+        }
+      } catch (e) {
+        _logService.error('等待PC文件列表响应时发生异常: $e', category: 'FileService');
+        return [];
       }
     } catch (e) {
       _logService.error('获取PC文件列表异常: $e', category: 'FileService');
-      throw Exception('获取PC文件列表失败: $e');
+      // 返回空列表而不是抛出异常，提供更好的用户体验
+      return [];
     }
   }
 
-  /// 等待文件列表响应
+  /// 等待文件列表响应 - 增强异常处理
   Future<Map<String, dynamic>?> _waitForFileListResponse(String messageId) async {
     try {
       print('🔥🔥🔥 [FILE_DEBUG] 开始等待文件列表响应 - messageId: $messageId');
@@ -130,32 +148,45 @@ class FileService {
         }
       });
 
-      // 监听所有消息进行调试
+      // 监听消息流，增加异常安全处理
       late StreamSubscription debugSubscription;
-      debugSubscription = _socketService.messageStream.listen((message) {
-        print('🔥🔥🔥 [FILE_DEBUG] 收到消息: type=${message.type}, messageId=${message.messageId}');
-        
-        // 如果是我们需要的响应
-        if (message.type == 'file_list_response' && message.messageId == messageId) {
-          if (!completer.isCompleted) {
-            print('🔥🔥🔥 [FILE_DEBUG] 找到匹配的文件列表响应!!!');
-            timeoutTimer?.cancel();
-            debugSubscription.cancel();
-            completer.complete(message.toJson());
-          }
-        }
-      }, onError: (error) {
-        if (!completer.isCompleted) {
-          timeoutTimer?.cancel();
-          debugSubscription.cancel();
-          print('🔥🔥🔥 [FILE_DEBUG] 消息流监听错误: $error');
-          completer.complete(null);
-        }
-      });
+      try {
+        debugSubscription = _socketService.messageStream.listen(
+          (message) {
+            print('🔥🔥🔥 [FILE_DEBUG] 收到消息: type=${message.type}, messageId=${message.messageId}');
+            
+            // 如果是我们需要的响应
+            if (message.type == 'file_list_response' && message.messageId == messageId) {
+              if (!completer.isCompleted) {
+                print('🔥🔥🔥 [FILE_DEBUG] 找到匹配的文件列表响应!!!');
+                timeoutTimer.cancel();
+                debugSubscription.cancel();
+                completer.complete(message.toJson());
+              }
+            }
+          }, 
+          onError: (error) {
+            if (!completer.isCompleted) {
+              timeoutTimer.cancel();
+              debugSubscription.cancel();
+              print('🔥🔥🔥 [FILE_DEBUG] 消息流监听错误: $error');
+              _logService.error('消息流监听错误: $error', category: 'FileService');
+              completer.complete(null);
+            }
+          },
+          cancelOnError: false, // 不要因为单个错误而取消整个流
+        );
+      } catch (e) {
+        print('🔥🔥�� [FILE_DEBUG] 创建消息流监听器失败: $e');
+                 timeoutTimer.cancel();
+        _logService.error('创建消息流监听器失败: $e', category: 'FileService');
+        return null;
+      }
 
       return await completer.future;
     } catch (e) {
       print('🔥🔥🔥 [FILE_DEBUG] 等待PC文件列表响应失败: $e');
+      _logService.error('等待PC文件列表响应失败: $e', category: 'FileService');
       return null;
     }
   }

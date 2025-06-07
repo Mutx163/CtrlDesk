@@ -60,20 +60,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   
   void _sendControlMessage(ControlMessage message) {
     final connectionStatus = ref.read(connectionStatusProvider);
-    print('🔍 发送控制消息 - 连接状态: $connectionStatus, 消息类型: ${message.type}, 动作: ${message.payload['action']}');
     
     if (connectionStatus == ConnectionStatus.connected) {
       ref.read(socketServiceProvider).sendMessage(message).then((success) {
-        print('📤 消息发送结果: $success, 消息: ${message.type}-${message.payload['action']}');
         if (success && mounted) {
           HapticFeedback.lightImpact();
         }
       }).catchError((e) {
-        // 详细错误记录
-        print('❌ 发送控制消息失败: $e, 消息类型: ${message.type}');
+        LogService.instance.error('发送控制消息失败: $e, 消息类型: ${message.type}', category: 'Dashboard');
       });
-    } else {
-      print('⚠️ 连接状态异常，无法发送消息: $connectionStatus');
     }
   }
 
@@ -419,8 +414,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // 当没有从PC获取到任何值时，控件处于禁用状态
     final bool isDisabled = volumeState.volume == null;
 
-    // 添加调试信息
-    print('🏠 首页音量卡片构建: volume=${volumeState.volume}, localVolume=$_localVolume, displayVolume=$displayVolume, isDisabled=$isDisabled, isMuted=${volumeState.isMuted}');
+    // 只在异常状态时记录调试信息
+    if (isDisabled) {
+      LogService.instance.debug('音量控件处于禁用状态: 未获取到PC音量数据', category: 'Dashboard');
+    }
 
     return Card(
       child: Padding(

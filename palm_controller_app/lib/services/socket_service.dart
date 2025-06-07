@@ -1,6 +1,7 @@
 ﻿import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:uuid/uuid.dart';
 import '../models/control_message.dart';
 import '../models/connection_config.dart';
@@ -42,35 +43,65 @@ class SocketService {
 
   String? _lastError;
   String? get lastError => _lastError;
+  
+  // JSON消息缓冲区 - 处理TCP拆分传输
+  final StringBuffer _messageBuffer = StringBuffer();
 
-  // 连接到服务器
+  // 连接到PC端
   Future<bool> connect(ConnectionConfig config) async {
-    if (_currentStatus == ConnectionStatus.connected) {
-      return true;
-    }
-
     if (_currentStatus == ConnectionStatus.connecting) {
+      LogService.instance.warning('已在连接中，跳过重复连接请求', category: 'Socket');
       return false;
     }
 
+    if (_currentStatus == ConnectionStatus.connected) {
+      LogService.instance.info('已连接，先断开现有连接', category: 'Socket');
+      await disconnect();
+    }
+
     final stopwatch = Stopwatch()..start();
+    _updateStatus(ConnectionStatus.connecting);
 
     try {
-      _updateStatus(ConnectionStatus.connecting);
-      _lastError = null;
-
       LogService.instance.socketConnection(
         action: 'connect', 
         host: config.ipAddress, 
         port: config.port
       );
 
-      // 创建Socket连接
-      _socket = await Socket.connect(
-        config.ipAddress,
-        config.port,
-        timeout: const Duration(seconds: 10),
-      );
+      // 优化：增加连接超时时间，并使用分级超时策略
+      const primaryTimeout = Duration(seconds: 15); // 主要超时
+      const fallbackTimeout = Duration(seconds: 8);  // 备用快速超时
+      
+      Socket? socket;
+      
+      try {
+        // 第一次尝试：使用较长超时适应慢速网络
+        socket = await Socket.connect(
+          config.ipAddress,
+          config.port,
+          timeout: primaryTimeout,
+        );
+      } on SocketException catch (e) {
+        // 分析异常类型决定是否快速重试
+        if (_isRetryableSocketError(e)) {
+          LogService.instance.warning('首次连接失败，尝试快速重试: ${e.message}', category: 'Socket');
+          
+          // 等待短暂时间后快速重试
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          socket = await Socket.connect(
+            config.ipAddress,
+            config.port,
+            timeout: fallbackTimeout,
+          );
+        } else {
+          // 不可重试的错误直接抛出
+          rethrow;
+        }
+      }
+      
+      _socket = socket;
 
       // 监听数据接收
       _socketSubscription = _socket!.listen(
@@ -88,6 +119,7 @@ class SocketService {
         metadata: {
           'host': config.ipAddress,
           'port': config.port,
+          'timeout_used': _socket!.port == config.port ? 'primary' : 'fallback',
         }
       );
 
@@ -103,9 +135,35 @@ class SocketService {
       _startHeartbeat();
 
       return true;
+    } on SocketException catch (e) {
+      stopwatch.stop();
+      _lastError = _categorizeSocketError(e);
+      _updateStatus(ConnectionStatus.error);
+      
+      LogService.instance.socketConnection(
+        action: 'connect',
+        host: config.ipAddress,
+        port: config.port,
+        error: _lastError,
+      );
+      
+      return false;
+    } on TimeoutException catch (e) {
+      stopwatch.stop();
+      _lastError = '连接超时：请检查网络状况和目标设备状态';
+      _updateStatus(ConnectionStatus.error);
+      
+      LogService.instance.socketConnection(
+        action: 'connect',
+        host: config.ipAddress,
+        port: config.port,
+        error: 'TimeoutException: ${e.message}',
+      );
+      
+      return false;
     } catch (e) {
       stopwatch.stop();
-      _lastError = e.toString();
+      _lastError = '连接异常：$e';
       _updateStatus(ConnectionStatus.error);
       
       LogService.instance.socketConnection(
@@ -137,51 +195,46 @@ class SocketService {
 
   // 发送消息
   Future<bool> sendMessage(ControlMessage message) async {
-    print('🚀 SocketService.sendMessage() 开始 - 消息: ${message.type}, 当前状态: $_currentStatus');
-    
-    // 严格检查连接状态
     if (_socket == null || _currentStatus != ConnectionStatus.connected) {
-      print('❌ 连接检查失败 - Socket: ${_socket != null ? '存在' : '空'}, 状态: $_currentStatus');
+      _lastError = 'Socket not connected';
       return false;
     }
 
     try {
-      // 多重检查确保Socket可用
-      final socket = _socket;
-      if (socket == null) {
-        print('❌ Socket为空，无法发送消息');
-        return false;
-      }
-      
-      // 检查Socket是否真的处于连接状态
-      try {
-        final remoteAddress = socket.remoteAddress;
-        final remotePort = socket.remotePort;
-        print('✅ Socket连接正常 - 地址: ${remoteAddress.address}:$remotePort');
-        // 如果能获取到地址和端口，说明连接正常
-      } catch (e) {
-        // 如果获取地址失败，说明连接已断开
-        print('❌ Socket状态异常: $e');
-        _updateStatus(ConnectionStatus.error);
-        return false;
-      }
-      
       final jsonString = jsonEncode(message.toJson());
       final data = utf8.encode('$jsonString\n');
       
+      // 优化发送日志：简化频繁操作的日志输出
+      if (message.type == 'heartbeat') {
+        // 心跳消息使用debug级别，减少日志噪音
+        LogService.instance.debug('发送心跳消息', category: 'Socket');
+      } else if (message.type == 'preview_image') {
+        print('📤 发送图片预览请求: ${message.payload?['path'] ?? 'unknown'}');
+      } else {
+        print('📤 发送消息: ${message.type}');
+      }
+      
       LogService.instance.socketConnection(
         action: 'send',
-        host: socket.remoteAddress.address,
-        port: socket.remotePort,
+        host: _socket!.remoteAddress.address,
+        port: _socket!.remotePort,
         messageType: message.type,
         dataSize: data.length,
       );
       
       // 直接尝试写入，如果失败立即捕获
       try {
-        socket.add(data);
-        await socket.flush();
-        print('✅ 消息发送成功: ${message.type}');
+        _socket!.add(data);
+        await _socket!.flush();
+        
+        // 优化成功日志：只有重要操作才显示成功消息
+        if (message.type != 'heartbeat') {
+          if (message.type == 'preview_image') {
+            print('✅ 图片预览请求发送成功');
+          } else {
+            print('✅ 消息发送成功: ${message.type}');
+          }
+        }
       } catch (writeError) {
         // 写入失败，立即标记连接错误
         print('❌ 写入数据失败: $writeError');
@@ -273,62 +326,188 @@ class SocketService {
     return await sendMessage(message);
   }
 
-  // 数据接收处理
+  // 数据接收处理 - 支持TCP拆分传输的JSON消息重组
   void _onDataReceived(List<int> data) {
     try {
-      final message = utf8.decode(data);
-      print('📨 Socket接收到原始数据: ${message.replaceAll('\n', '\\n')}');
+      final newData = utf8.decode(data);
       
-      final lines = message.split('\n');
-      for (final line in lines) {
-        final trimmedLine = line.trim();
-        if (trimmedLine.isNotEmpty) {
-          print('📝 解析消息行: $trimmedLine');
+      // 将新接收的数据添加到缓冲区
+      _messageBuffer.write(newData);
+      
+      // 尝试从缓冲区提取完整的JSON消息
+      _processBufferedMessages();
+      
+    } catch (e) {
+      _lastError = 'Failed to decode data: $e';
+      print('❌ 数据解码失败: $e');
+      LogService.instance.warning('数据解码异常: $e', category: 'Socket');
+    }
+  }
+  
+  // 处理缓冲区中的消息
+  void _processBufferedMessages() {
+    final bufferContent = _messageBuffer.toString();
+    
+    // 按换行符分割，寻找完整的JSON消息
+    final lines = bufferContent.split('\n');
+    int processedLines = 0;
+    
+    for (int i = 0; i < lines.length - 1; i++) { // 最后一行可能不完整，先不处理
+      final line = lines[i].trim();
+      if (line.isEmpty) {
+        processedLines++;
+        continue;
+      }
+      
+      // 尝试解析JSON消息
+      if (_tryProcessJsonMessage(line)) {
+        processedLines++;
+      } else {
+        // 如果当前行无法解析，可能是多行JSON的一部分
+        // 尝试与后续行组合解析
+        final combined = _tryRecombineJson(lines, i);
+        if (combined != null) {
+          if (_tryProcessJsonMessage(combined.content)) {
+            processedLines += combined.lineCount;
+            i += combined.lineCount - 1; // 跳过已处理的行
+          } else {
+            // 组合后仍无法解析，跳过当前行
+            print('⚠️ 跳过无效数据: [${line.length}字符] ${line.substring(0, math.min(50, line.length))}...');
+            processedLines++;
+          }
+        } else {
+          // 无法组合，跳过当前行
+                     print('⚠️ 跳过无效数据: [${line.length}字符] ${line.substring(0, math.min(50, line.length))}...');
+          processedLines++;
+        }
+      }
+    }
+    
+    // 移除已处理的数据，保留可能不完整的最后一行
+    if (processedLines > 0) {
+      final remainingLines = lines.skip(processedLines).toList();
+      _messageBuffer.clear();
+      if (remainingLines.isNotEmpty) {
+        _messageBuffer.write(remainingLines.join('\n'));
+      }
+    }
+  }
+  
+  // 尝试处理单个JSON消息
+  bool _tryProcessJsonMessage(String line) {
+    try {
+      // 检查JSON格式
+      if (!line.startsWith('{') || !line.endsWith('}')) {
+        return false;
+      }
+      
+      final json = jsonDecode(line);
+      
+      // 验证JSON结构
+      if (json is! Map<String, dynamic> || 
+          !json.containsKey('type') || 
+          !json.containsKey('messageId')) {
+        return false;
+      }
+      
+      final controlMessage = ControlMessage.fromJson(json);
+      
+      // 根据消息类型选择性输出日志
+      _logReceivedMessage(controlMessage, line.length);
+      
+      _messageController.add(controlMessage);
+      return true;
+      
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // 尝试重新组合被拆分的JSON
+  ({String content, int lineCount})? _tryRecombineJson(List<String> lines, int startIndex) {
+    // 尝试组合最多10行来形成完整JSON
+         for (int endIndex = startIndex + 1; endIndex < math.min(lines.length, startIndex + 10); endIndex++) {
+      final combined = lines.sublist(startIndex, endIndex + 1).join('');
+      
+      // 检查是否形成了完整的JSON
+      if (combined.startsWith('{') && combined.endsWith('}')) {
+        try {
+          jsonDecode(combined); // 验证JSON有效性
+          return (content: combined, lineCount: endIndex - startIndex + 1);
+        } catch (e) {
+          continue; // JSON无效，继续尝试
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  // 智能日志输出
+  void _logReceivedMessage(ControlMessage message, int dataSize) {
+    switch (message.type) {
+      case 'heartbeat':
+        // 心跳消息静默处理
+        break;
+      case 'image_preview_response':
+        print('🖼️ 图片预览响应: [${dataSize}字符]');
+        break;
+      case 'file_list_response':
+        final fileCount = message.payload['files']?.length ?? 0;
+        print('📁 文件列表响应: ${fileCount}个项目 [${dataSize}字符]');
+        break;
+      default:
+        if (dataSize <= 200) {
+          print('📨 收到消息: ${message.type}');
+        } else {
+          print('📨 收到消息: ${message.type} [${dataSize}字符]');
+        }
+        break;
+    }
+  }
+
+  /// 检测是否是图片数据传输
+  bool _isLikelyImageData(String message) {
+    // 判断条件：
+    // 1. 数据长度大于10KB，通常是大数据传输
+    // 2. 包含Base64特征字符且比例较高
+    // 3. 非JSON格式行占主导地位
+    
+    if (message.length < 10000) return false;
+    
+    final lines = message.split('\n');
+    int nonJsonLines = 0;
+    int base64LikeLines = 0;
+    
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isNotEmpty) {
+        // 检查是否是JSON格式
+        if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+          nonJsonLines++;
           
-          // 增加JSON解析的安全检查
-          try {
-            // 检查是否是有效的JSON格式
-            if (!trimmedLine.startsWith('{') || !trimmedLine.endsWith('}')) {
-              print('⚠️ 跳过非JSON格式数据: $trimmedLine');
-              continue;
-            }
-            
-            final json = jsonDecode(trimmedLine);
-            
-            // 验证JSON是否包含必要字段
-            if (json is! Map<String, dynamic>) {
-              print('⚠️ JSON不是对象格式: $trimmedLine');
-              continue;
-            }
-            
-            // 检查必要字段
-            if (!json.containsKey('type') || !json.containsKey('messageId')) {
-              print('⚠️ JSON缺少必要字段: $trimmedLine');
-              continue;
-            }
-            
-            final controlMessage = ControlMessage.fromJson(json);
-            print('✅ 成功解析消息: 类型=${controlMessage.type}, payload=${controlMessage.payload}');
-            _messageController.add(controlMessage);
-            
-          } catch (lineError) {
-            print('❌ 解析单行JSON失败: $lineError, 原始数据: $trimmedLine');
-            // 继续处理其他行，不中断整个数据处理流程
-            continue;
+          // 检查是否像Base64编码（主要由字母数字和少量特殊字符组成）
+          if (trimmed.length > 50 && _isBase64Like(trimmed)) {
+            base64LikeLines++;
           }
         }
       }
-    } catch (e) {
-      _lastError = 'Failed to parse message: $e';
-      print('❌ 消息解析失败: $e');
-      
-      // 增加详细的错误信息
-      if (e.toString().contains('FormatException')) {
-        print('🔍 JSON格式错误详情: 可能是服务端发送了非JSON数据或数据不完整');
-      } else if (e.toString().contains('utf8')) {
-        print('🔍 编码错误详情: 数据可能包含无效的UTF-8字符');
-      }
     }
+    
+    // 如果非JSON行数占80%以上，且大部分像Base64，认为是图片数据
+    final totalLines = lines.where((l) => l.trim().isNotEmpty).length;
+    return totalLines > 0 && 
+           (nonJsonLines / totalLines) > 0.8 && 
+           (base64LikeLines / nonJsonLines) > 0.6;
+  }
+
+  /// 检测字符串是否像Base64编码
+  bool _isBase64Like(String text) {
+    if (text.isEmpty) return false;
+    
+    // Base64字符集：A-Z, a-z, 0-9, +, /, =
+    final base64Pattern = RegExp(r'^[A-Za-z0-9+/=]+$');
+    return base64Pattern.hasMatch(text);
   }
 
   // 错误处理
@@ -371,5 +550,36 @@ class SocketService {
     await disconnect();
     await _statusController.close();
     await _messageController.close();
+  }
+
+  // 判断是否为可重试的Socket错误
+  bool _isRetryableSocketError(SocketException e) {
+    final message = e.message.toLowerCase();
+    
+    // 可重试的错误类型
+    return message.contains('network is unreachable') ||
+           message.contains('connection refused') ||
+           message.contains('host is down') ||
+           message.contains('timeout') ||
+           message.contains('no route to host');
+  }
+
+  // 分类Socket错误，提供用户友好的错误信息
+  String _categorizeSocketError(SocketException e) {
+    final message = e.message.toLowerCase();
+    
+    if (message.contains('network is unreachable') || message.contains('no route to host')) {
+      return '网络不可达：请检查设备是否在同一网络中';
+    } else if (message.contains('connection refused')) {
+      return '连接被拒绝：请确保PC端服务正在运行';
+    } else if (message.contains('host is down')) {
+      return '目标设备离线：请检查PC端设备状态';
+    } else if (message.contains('timeout')) {
+      return '连接超时：网络较慢或设备响应延迟';
+    } else if (message.contains('permission denied')) {
+      return '权限被拒绝：请检查防火墙设置';
+    } else {
+      return '连接失败：${e.message}';
+    }
   }
 } 

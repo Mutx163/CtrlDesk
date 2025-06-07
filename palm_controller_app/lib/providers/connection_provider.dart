@@ -234,10 +234,8 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
   ConnectionStatus? _lastConnectionStatus; // 记录上一次的连接状态
 
   VolumeStateNotifier(this._ref) : super(VolumeState(volume: null, isMuted: false)) {
-    print('🔊 VolumeStateNotifier初始化开始');
     _subscribeToMessages();
     _listenToConnectionStatus();
-    print('🔊 VolumeStateNotifier初始化完成');
   }
 
   void _listenToConnectionStatus() {
@@ -265,32 +263,23 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
     // Use _ref.read to get SocketService instance
     final socketService = _ref.read(socketServiceProvider);
     _messageSubscription = socketService.messageStream.listen((message) {
-      print('🔊 VolumeStateNotifier收到消息: 类型=${message.type}');
       if (message.type == 'volume_status') {
-        print('🔊 处理音量状态消息: ${message.payload}');
         _handleVolumeStatusMessage(message);
-      } else {
-        print('🔊 忽略非音量消息: ${message.type}');
       }
+      // 移除冗余的调试日志，只在错误时记录
     });
   }
 
   void _handleVolumeStatusMessage(ControlMessage message) {
     try {
-      print('🔊 解析音量消息payload: ${message.payload}');
       if (message.payload['volume'] != null) {
         final newVolume = (message.payload['volume'] as num).toDouble();
         final newMuteState = message.payload['muted'] as bool? ?? false;
-        print('🔊 音量数据: volume=$newVolume, muted=$newMuteState');
         if (mounted) {
           state = state.copyWith(volume: newVolume, isMuted: newMuteState);
-          print('🔊 音量状态已更新: $state');
         }
-      } else {
-        print('🔊 音量消息缺少volume字段');
       }
     } catch (e) {
-      print('🔊 音量消息解析错误: $e');
       LogService.instance.error('Error parsing volume_status: $e', category: 'VolumeState');
     }
   }
@@ -504,10 +493,21 @@ class ConnectionManagerNotifier extends StateNotifier<AsyncValue<bool>> {
     _onNavigateToControl = callback;
   }
 
-  // 执行导航
+  // 执行导航 - 增强安全性
   void _navigateToControlScreen() {
     if (_onNavigateToControl != null) {
-      _onNavigateToControl!();
+      try {
+        // 使用microtask延迟执行，确保在下一个事件循环中执行
+        // 这样可以避免在Widget dispose过程中访问context
+        Future.microtask(() {
+          if (_onNavigateToControl != null) {
+            _onNavigateToControl!();
+          }
+        });
+      } catch (e) {
+        // 记录导航回调执行异常，但不中断连接流程
+        LogService.instance.error('Navigation callback execution error: $e', category: 'ConnectionManager');
+      }
     }
   }
 }

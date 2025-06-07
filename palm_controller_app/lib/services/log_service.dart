@@ -213,13 +213,9 @@ class LogService {
       final logFile = File('${logDir.path}/app.log');
       
       _logger = Logger(
-        printer: PrettyPrinter(
-          methodCount: 2,
-          errorMethodCount: 8,
-          lineLength: 120,
-          colors: false, // 文件日志不需要颜色
-          printEmojis: false,
-          dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+        printer: SimplePrinter(
+          colors: false, // 简化输出，无装饰框
+          printTime: true,
         ),
         output: MultiOutput([
           ConsoleOutput(), // 控制台输出（调试时可见）

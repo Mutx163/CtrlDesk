@@ -68,8 +68,18 @@ class FileListNotifier extends StateNotifier<FileListState> {
           ? await _fileService.getLocalFiles(currentPath)
           : await _fileService.getPCFiles(currentPath);
 
+      // FileService现在返回空列表而不是抛出异常，无需特殊处理
       state = state.copyWith(files: files, isLoading: false);
+      
+      // 记录成功日志
+      if (mode == FileBrowseMode.pc && files.isEmpty && currentPath != null) {
+        // PC模式下如果返回空列表且不是根目录，可能是连接问题
+        state = state.copyWith(
+          error: '无法获取PC文件列表，请检查连接状态',
+        );
+      }
     } catch (e) {
+      // 虽然FileService不再抛出异常，但保留此处理以防万一
       state = state.copyWith(
         isLoading: false,
         error: '加载文件列表失败: $e',

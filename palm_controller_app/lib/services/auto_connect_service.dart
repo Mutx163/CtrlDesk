@@ -3,6 +3,7 @@ import '../models/connection_config.dart';
 import '../services/discovery_service.dart';
 import '../services/socket_service.dart';
 import '../services/log_service.dart';
+import 'dart:math' as math;
 
 enum AutoConnectStatus {
   disabled,
@@ -27,6 +28,7 @@ class AutoConnectService {
   AutoConnectStatus _status = AutoConnectStatus.disabled;
   String? _lastError;
   ConnectionConfig? _currentConnection;
+  int _reconnectAttempts = 0;
   
   final StreamController<AutoConnectStatus> _statusController =
       StreamController<AutoConnectStatus>.broadcast();
@@ -196,20 +198,99 @@ class AutoConnectService {
 
   // 尝试重新连接
   Future<void> _attemptReconnect() async {
-    // 延迟2秒后重试，避免频繁重连
-    await Future.delayed(const Duration(seconds: 2));
-    
-    if (_currentConnection != null) {
-      LogService.instance.info('尝试重新连接到: ${_currentConnection!.name}', category: 'AutoConnect');
-      
-      final success = await _socketService.connect(_currentConnection!);
-      if (!success) {
-        // 重连失败，不再自动扫描，改为等待用户手动操作
-        LogService.instance.warning('重连失败，请使用手动连接', category: 'AutoConnect');
-        _updateStatus(AutoConnectStatus.disabled);
-        _lastError = '连接丢失，请重新手动连接';
-      }
+    // 检查是否应该进行重连
+    if (_status == AutoConnectStatus.disabled || 
+        _status == AutoConnectStatus.connecting ||
+        _currentConnection == null) {
+      return;
     }
+
+    // 检查Socket服务状态，避免重复连接
+    if (_socketService.currentStatus == ConnectionStatus.connecting) {
+      LogService.instance.debug('Socket服务正在连接中，跳过重连', category: 'AutoConnect');
+      return;
+    }
+
+    if (_socketService.currentStatus == ConnectionStatus.connected) {
+      LogService.instance.debug('Socket服务已连接，无需重连', category: 'AutoConnect');
+      _updateStatus(AutoConnectStatus.connected);
+      return;
+    }
+
+         // 指数退避策略：根据重连次数增加延迟时间
+    final baseDelay = Duration(seconds: 2);
+    final maxDelay = Duration(seconds: 30);
+         final backoffDelay = Duration(
+       seconds: math.min(
+         baseDelay.inSeconds * math.pow(2, _reconnectAttempts).toInt(),
+         maxDelay.inSeconds,
+       ),
+     );
+
+     LogService.instance.info(
+       '连接丢失，将在${backoffDelay.inSeconds}秒后尝试重连 (第${_reconnectAttempts + 1}次)',
+       category: 'AutoConnect'
+     );
+
+    // 延迟后重试，使用指数退避
+    await Future.delayed(backoffDelay);
+    
+    // 再次检查状态，确保仍需要重连
+    if (_status == AutoConnectStatus.disabled || 
+        _currentConnection == null ||
+        _socketService.currentStatus == ConnectionStatus.connected) {
+      return;
+    }
+
+    LogService.instance.info('开始重连到: ${_currentConnection!.name}', category: 'AutoConnect');
+    
+    // 更新状态为连接中
+    _updateStatus(AutoConnectStatus.connecting);
+    
+    try {
+      final success = await _socketService.connect(_currentConnection!);
+      
+             if (success) {
+         // 重连成功，重置计数器
+         _reconnectAttempts = 0;
+         _updateStatus(AutoConnectStatus.connected);
+         LogService.instance.info('重连成功: ${_currentConnection!.name}', category: 'AutoConnect');
+       } else {
+         // 重连失败，增加计数器
+         _reconnectAttempts++;
+         
+         if (_reconnectAttempts >= 5) {
+           // 连续失败5次后停止自动重连
+           LogService.instance.warning('重连失败次数过多，停止自动重连', category: 'AutoConnect');
+           _updateStatus(AutoConnectStatus.disabled);
+           _lastError = '连接持续失败，请检查网络状况或手动重连';
+           _reconnectAttempts = 0; // 重置计数器
+         } else {
+           // 继续尝试重连
+           LogService.instance.warning(
+             '重连失败 (${_reconnectAttempts}/5)，将继续尝试: ${_socketService.lastError}',
+             category: 'AutoConnect'
+           );
+          _updateStatus(AutoConnectStatus.scanning); // 标记为扫描状态，准备下次重连
+          
+          // 递归调用进行下次重连尝试
+          Future.delayed(Duration(seconds: 1), () => _attemptReconnect());
+        }
+      }
+         } catch (e) {
+       _reconnectAttempts++;
+       _lastError = '重连异常: $e';
+       
+       LogService.instance.error('重连异常 (${_reconnectAttempts}/5): $e', category: 'AutoConnect');
+       
+       if (_reconnectAttempts >= 5) {
+         _updateStatus(AutoConnectStatus.disabled);
+         _reconnectAttempts = 0;
+       } else {
+         _updateStatus(AutoConnectStatus.scanning);
+         Future.delayed(Duration(seconds: 1), () => _attemptReconnect());
+       }
+     }
   }
 
   // 备用扫描（连接失败后继续寻找其他设备）

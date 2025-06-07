@@ -634,7 +634,7 @@ namespace PalmControllerServer.Services
                                  ["path"] = drive.RootDirectory.FullName,
                                  ["type"] = "directory",
                                  ["size"] = 0,
-                                 ["lastModified"] = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
+                                 ["lastModified"] = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                                  ["isHidden"] = false
                              });
                          }
@@ -656,7 +656,7 @@ namespace PalmControllerServer.Services
                                      ["path"] = dir.FullName,
                                      ["type"] = "directory",
                                      ["size"] = 0,
-                                     ["lastModified"] = dir.LastWriteTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                                     ["lastModified"] = dir.LastWriteTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                                      ["isHidden"] = (dir.Attributes & FileAttributes.Hidden) != 0
                                  });
                              }
@@ -677,7 +677,7 @@ namespace PalmControllerServer.Services
                                      ["path"] = file.FullName,
                                      ["type"] = "file",
                                      ["size"] = file.Length,
-                                     ["lastModified"] = file.LastWriteTime.ToString("yyyy-MM-ddTHH:mm:ss"),
+                                     ["lastModified"] = file.LastWriteTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                                      ["isHidden"] = (file.Attributes & FileAttributes.Hidden) != 0,
                                  });
                              }
@@ -691,43 +691,38 @@ namespace PalmControllerServer.Services
 
                  LogService.Instance.Info($"File list retrieved: {files.Count} items for path: {path}", "FileSystem");
                  
-                 // 发送文件列表响应
-                 var response = new
-                 {
-                     messageId = messageId,
-                     type = "file_list_response",
-                     timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                     payload = new
+                 // 发送文件列表响应 - 直接创建ControlMessage对象
+                 var responseMessage = new ControlMessage(
+                     messageId, 
+                     "file_list_response", 
+                     DateTime.Now, 
+                     new Dictionary<string, object>
                      {
-                         files = files,
-                         path = path
+                         ["files"] = files,
+                         ["path"] = path ?? ""
                      }
-                 };
+                 );
 
-                 var responseMessage = ControlMessage.FromJson(Newtonsoft.Json.JsonConvert.SerializeObject(response));
-                 if (responseMessage != null)
-                     await _socketServer?.BroadcastMessageAsync(responseMessage)!;
+                 await _socketServer?.BroadcastMessageAsync(responseMessage)!;
              }
              catch (Exception ex)
              {
                  LogService.Instance.Error($"Failed to list files for path: {path}", ex, "FileSystem");
                  
-                 // 发送错误响应
-                 var errorResponse = new
-                 {
-                     messageId = messageId,
-                     type = "file_list_response",
-                     timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss"),
-                     payload = new
+                 // 发送错误响应 - 直接创建ControlMessage对象
+                 var errorMessage = new ControlMessage(
+                     messageId, 
+                     "file_list_response", 
+                     DateTime.Now, 
+                     new Dictionary<string, object>
                      {
-                         files = new List<object>(),
-                         error = ex.Message
+                         ["files"] = new List<object>(),
+                         ["path"] = path ?? "",
+                         ["error"] = ex.Message
                      }
-                 };
+                 );
 
-                 var errorMessage = ControlMessage.FromJson(Newtonsoft.Json.JsonConvert.SerializeObject(errorResponse));
-                 if (errorMessage != null)
-                     await _socketServer?.BroadcastMessageAsync(errorMessage)!;
+                 await _socketServer?.BroadcastMessageAsync(errorMessage)!;
              }
          }
 
