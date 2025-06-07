@@ -169,18 +169,28 @@ final volumeStateProvider =
   return VolumeStateNotifier(ref); // Pass the Ref object directly
 });
 
+// 新增：媒体状态枚举
+enum MediaState {
+  unknown,    // 未知状态（初始状态）
+  loading,    // 正在加载媒体状态
+  available,  // 有媒体信息可用
+  unavailable // 无媒体信息（没有播放器活动）
+}
+
 // 新增：媒体状态数据模型
 class MediaStatus {
   final String? title;
   final String? artist;
   final bool isPlaying;
   final String? artworkUrl; // 专辑封面URL
+  final MediaState state; // 媒体状态
 
   MediaStatus({
     this.title,
     this.artist,
     this.isPlaying = false,
     this.artworkUrl,
+    this.state = MediaState.unknown,
   });
 
   MediaStatus copyWith({
@@ -188,18 +198,20 @@ class MediaStatus {
     String? artist,
     bool? isPlaying,
     String? artworkUrl,
+    MediaState? state,
   }) {
     return MediaStatus(
       title: title ?? this.title,
       artist: artist ?? this.artist,
       isPlaying: isPlaying ?? this.isPlaying,
       artworkUrl: artworkUrl ?? this.artworkUrl,
+      state: state ?? this.state,
     );
   }
 
   @override
   String toString() {
-    return 'MediaStatus(title: $title, artist: $artist, isPlaying: $isPlaying)';
+    return 'MediaStatus(title: $title, artist: $artist, isPlaying: $isPlaying, state: $state)';
   }
 }
 
@@ -326,8 +338,6 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
     await _requestVolumeStatus();
   }
 
-
-
   @override
   void dispose() {
     _messageSubscription?.cancel();
@@ -350,15 +360,46 @@ final systemInfoProvider = StateNotifierProvider<SystemInfoNotifier, SystemInfo>
 class MediaStatusNotifier extends StateNotifier<MediaStatus> {
   final Ref _ref;
   StreamSubscription? _messageSubscription;
+  StreamSubscription<ConnectionStatus>? _connectionStatusSubscription;
+  ConnectionStatus? _lastConnectionStatus;
+  Timer? _requestTimeout;
 
   MediaStatusNotifier(this._ref) : super(MediaStatus()) {
     _subscribeToMessages();
+    _listenToConnectionStatus();
+  }
+
+  void _listenToConnectionStatus() {
+    final socketService = _ref.read(socketServiceProvider);
+    _connectionStatusSubscription = socketService.statusStream.listen((status) {
+      // 连接成功时主动请求媒体状态
+      if (status == ConnectionStatus.connected && _lastConnectionStatus != ConnectionStatus.connected) {
+        // 设置为加载状态
+        if (mounted) {
+          state = state.copyWith(state: MediaState.loading);
+        }
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && _ref.read(socketServiceProvider).currentStatus == ConnectionStatus.connected) {
+            _requestMediaStatus();
+          }
+        });
+      }
+      // 连接断开时重置媒体状态
+      if (status == ConnectionStatus.disconnected) {
+        _cancelRequestTimeout();
+        if (mounted) {
+          state = MediaStatus(state: MediaState.unknown); // 重置为未知状态
+        }
+      }
+      _lastConnectionStatus = status;
+    });
   }
 
   void _subscribeToMessages() {
     final socketService = _ref.read(socketServiceProvider);
     _messageSubscription = socketService.messageStream.listen((message) {
       if (message.type == 'media_status') {
+        _cancelRequestTimeout(); // 收到响应，取消超时
         _handleMediaStatusMessage(message);
       }
     });
@@ -366,22 +407,86 @@ class MediaStatusNotifier extends StateNotifier<MediaStatus> {
 
   void _handleMediaStatusMessage(ControlMessage message) {
     try {
+      print('🎵 收到媒体状态响应: ${message.payload}');
+      
       if (mounted) {
+        final title = message.payload['title'];
+        final artist = message.payload['artist'];
+        final isPlaying = message.payload['isPlaying'] as bool? ?? false;
+        final artworkUrl = message.payload['artworkUrl'];
+        
+        // 根据返回的数据判断媒体状态
+        MediaState newState;
+        if (title != null && title.toString().isNotEmpty) {
+          newState = MediaState.available;
+        } else {
+          newState = MediaState.unavailable;
+        }
+        
         state = state.copyWith(
-          title: message.payload['title'],
-          artist: message.payload['artist'],
-          isPlaying: message.payload['isPlaying'],
-          artworkUrl: message.payload['artworkUrl'],
+          title: title,
+          artist: artist,
+          isPlaying: isPlaying,
+          artworkUrl: artworkUrl,
+          state: newState,
         );
+        
+        print('🎵 MediaStatusNotifier更新媒体状态: ${state.toString()}');
       }
     } catch (e) {
       LogService.instance.error('Error parsing media_status: $e', category: 'MediaState');
+      // 解析失败时设置为不可用状态
+      if (mounted) {
+        state = state.copyWith(state: MediaState.unavailable);
+      }
     }
+  }
+
+  Future<void> _requestMediaStatus() async {
+    final socketService = _ref.read(socketServiceProvider);
+    if (socketService.currentStatus == ConnectionStatus.connected) {
+      final requestMessage = ControlMessage.mediaControl(
+        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+        action: 'get_media_status',
+      );
+      
+      print('🎵 发送媒体状态请求: ${requestMessage.toJson()}');
+      await socketService.sendMessage(requestMessage);
+      print('🎵 MediaStatusNotifier请求媒体状态');
+      
+      // 设置5秒超时
+      _startRequestTimeout();
+    }
+  }
+
+  void _startRequestTimeout() {
+    _cancelRequestTimeout();
+    _requestTimeout = Timer(const Duration(seconds: 5), () {
+      print('🎵 媒体状态请求超时，可能没有活动的播放器');
+      if (mounted) {
+        state = state.copyWith(state: MediaState.unavailable);
+      }
+    });
+  }
+
+  void _cancelRequestTimeout() {
+    _requestTimeout?.cancel();
+    _requestTimeout = null;
+  }
+
+  // 外部调用刷新媒体状态
+  Future<void> refreshMediaStatus() async {
+    if (mounted) {
+      state = state.copyWith(state: MediaState.loading);
+    }
+    await _requestMediaStatus();
   }
 
   @override
   void dispose() {
+    _cancelRequestTimeout();
     _messageSubscription?.cancel();
+    _connectionStatusSubscription?.cancel();
     super.dispose();
   }
 }

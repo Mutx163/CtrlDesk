@@ -19,6 +19,7 @@ class ControlScreen extends ConsumerStatefulWidget {
 class _ControlScreenState extends ConsumerState<ControlScreen> {
   final TextEditingController _quickInputController = TextEditingController();
   Timer? _volumeDebounceTimer; // 添加防抖计时器
+  double? _localVolume; // 添加本地音量存储
 
   @override
   void initState() {
@@ -154,14 +155,9 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     return CustomScrollView(
       slivers: [
         
-        // 当前播放信息卡片
+        // 当前播放信息卡片（包含快捷操作按钮）
         SliverToBoxAdapter(
           child: _buildNowPlayingCard(context),
-        ),
-        
-        // 媒体控制按钮
-        SliverToBoxAdapter(
-          child: _buildMediaControls(context),
         ),
         
         // 音量控制
@@ -182,125 +178,317 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-
-
-  /// 当前播放信息卡片 - Material Design 3风格
+  /// 当前播放信息卡片 - 增强版 Material Design 3风格
   Widget _buildNowPlayingCard(BuildContext context) {
     final mediaStatus = ref.watch(mediaStatusProvider);
+    final connectionStatus = ref.watch(connectionStatusProvider);
+    
+    // MD3 主题色
+    const primaryColor = Color(0xFF6750A4); // MD3 Primary
     const mediaColor = Color(0xFFE91E63); // 媒体主色调：玫红色
+
+    // 连接状态检查
+    if (connectionStatus != ConnectionStatus.connected) {
+      return _buildNotConnectedMediaCard(context);
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            mediaColor.withOpacity(0.15),
-            mediaColor.withOpacity(0.08),
-            mediaColor.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24), // MD3标准圆角
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: mediaColor.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: mediaColor.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
             blurRadius: 12,
-            offset: const Offset(0, 6),
-            spreadRadius: 0,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24), // 增加内边距
-        child: Row(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 专辑封面 - 增强版
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16), // 更大圆角
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
+            // 顶部标题行
+            Row(
+              children: [
+                Icon(
+                  Icons.music_note_rounded,
+                  color: primaryColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '正在播放',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: mediaStatus.artworkUrl != null
-                    ? Image.network(
-                        mediaStatus.artworkUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => _buildDefaultArtwork(context),
-                      )
-                    : _buildDefaultArtwork(context),
-              ),
-            ),
-            const SizedBox(width: 24), // 增加间距
-            
-            // 歌曲信息 - 增强版
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 歌曲标题
-                  Text(
-                    mediaStatus.title ?? '未知曲目',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                ),
+                const Spacer(),
+                // 播放状态指示器
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: mediaStatus.isPlaying 
+                        ? mediaColor.withOpacity(0.15)
+                        : Colors.grey.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  const SizedBox(height: 8),
-                  
-                  // 艺术家
-                  Text(
-                    mediaStatus.artist ?? '未知艺术家',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  // 播放状态指示器
-                  Row(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         mediaStatus.isPlaying ? Icons.play_circle_filled : Icons.pause_circle_filled,
-                        color: mediaColor,
-                        size: 20,
+                        color: mediaStatus.isPlaying ? mediaColor : Colors.grey[600],
+                        size: 16,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Text(
-                        mediaStatus.isPlaying ? '正在播放' : '已暂停',
+                        mediaStatus.isPlaying ? '播放中' : '已暂停',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: mediaColor,
-                          fontWeight: FontWeight.w600,
+                          color: mediaStatus.isPlaying ? mediaColor : Colors.grey[600],
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            
+            // 媒体内容区域
+            Row(
+              children: [
+                // 专辑封面 - 增强版
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: mediaStatus.artworkUrl != null
+                        ? Image.network(
+                            mediaStatus.artworkUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => _buildDefaultArtwork(context),
+                          )
+                        : _buildDefaultArtwork(context),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                
+                // 歌曲信息 - 增强版
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 歌曲标题
+                      Text(
+                        _getDisplayTitle(mediaStatus),
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: _getTitleColor(context, mediaStatus.state),
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      // 艺术家
+                      Text(
+                        _getDisplayArtist(mediaStatus),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: _getSubtitleColor(context, mediaStatus.state),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // 快捷操作按钮
+                      Row(
+                        children: [
+                          _buildQuickActionButton(
+                            context,
+                            Icons.skip_previous_rounded,
+                            '上一首',
+                            () => _sendMediaControl('previous'),
+                            primaryColor,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildQuickActionButton(
+                            context,
+                            mediaStatus.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                            mediaStatus.isPlaying ? '暂停' : '播放',
+                            () => _sendMediaControl('play_pause'),
+                            mediaColor,
+                            isMain: true,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildQuickActionButton(
+                            context,
+                            Icons.skip_next_rounded,
+                            '下一首',
+                            () => _sendMediaControl('next'),
+                            primaryColor,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            // 底部附加信息 - 根据状态显示不同内容
+            const SizedBox(height: 16),
+            Divider(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              height: 1,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(
+                  _getStatusIcon(mediaStatus.state),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _getStatusText(mediaStatus.state),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ),
+                // 刷新按钮 - 始终显示
+                TextButton.icon(
+                  onPressed: () => _requestMediaStatus(),
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    size: 16,
+                    color: primaryColor,
+                  ),
+                  label: Text(
+                    '刷新',
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontSize: 12,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// 快捷操作按钮
+  Widget _buildQuickActionButton(
+    BuildContext context,
+    IconData icon,
+    String tooltip,
+    VoidCallback onPressed,
+    Color color, {
+    bool isMain = false,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(isMain ? 16 : 12),
+          child: Container(
+            padding: EdgeInsets.all(isMain ? 16 : 12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(isMain ? 16 : 12),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: isMain ? 24 : 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 未连接时的媒体卡片
+  Widget _buildNotConnectedMediaCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Icon(
+              Icons.music_off_rounded,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '未连接到设备',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '连接到电脑后即可查看当前播放信息',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 请求媒体状态
+  void _requestMediaStatus() {
+    ref.read(mediaStatusProvider.notifier).refreshMediaStatus();
   }
 
   /// 默认专辑封面
@@ -324,14 +512,116 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 媒体控制按钮区域 - Material Design 3风格
-  Widget _buildMediaControls(BuildContext context) {
-    final mediaStatus = ref.watch(mediaStatusProvider);
-    const mediaColor = Color(0xFFE91E63); // 媒体主色调
+  /// 根据媒体状态获取状态图标
+  IconData _getStatusIcon(MediaState state) {
+    switch (state) {
+      case MediaState.unknown:
+        return Icons.help_outline_rounded;
+      case MediaState.loading:
+        return Icons.hourglass_empty_rounded;
+      case MediaState.available:
+        return Icons.library_music_rounded;
+      case MediaState.unavailable:
+        return Icons.music_off_rounded;
+      default:
+        return Icons.help_outline_rounded;
+    }
+  }
+
+  /// 根据媒体状态获取状态文本
+  String _getStatusText(MediaState state) {
+    switch (state) {
+      case MediaState.unknown:
+        return '媒体状态未知，点击刷新按钮获取信息';
+      case MediaState.loading:
+        return '正在获取媒体信息...';
+      case MediaState.available:
+        return '点击上方按钮控制播放器';
+      case MediaState.unavailable:
+        return '当前没有媒体正在播放，请先打开播放器';
+      default:
+        return '媒体状态未知';
+    }
+  }
+
+  /// 获取显示标题
+  String _getDisplayTitle(MediaStatus mediaStatus) {
+    switch (mediaStatus.state) {
+      case MediaState.loading:
+        return '正在获取歌曲信息...';
+      case MediaState.unavailable:
+        return '无媒体播放';
+      case MediaState.available:
+        return mediaStatus.title ?? '未知曲目';
+      case MediaState.unknown:
+      default:
+        return '未知状态';
+    }
+  }
+
+  /// 获取显示艺术家
+  String _getDisplayArtist(MediaStatus mediaStatus) {
+    switch (mediaStatus.state) {
+      case MediaState.loading:
+        return '请稍候...';
+      case MediaState.unavailable:
+        return '请打开播放器应用';
+      case MediaState.available:
+        return mediaStatus.artist ?? '未知艺术家';
+      case MediaState.unknown:
+      default:
+        return '点击刷新获取信息';
+    }
+  }
+
+  /// 获取标题颜色
+  Color _getTitleColor(BuildContext context, MediaState state) {
+    switch (state) {
+      case MediaState.loading:
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+      case MediaState.unavailable:
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
+      case MediaState.available:
+        return Theme.of(context).colorScheme.onSurface;
+      case MediaState.unknown:
+      default:
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
+    }
+  }
+
+  /// 获取副标题颜色
+  Color _getSubtitleColor(BuildContext context, MediaState state) {
+    switch (state) {
+      case MediaState.loading:
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
+      case MediaState.unavailable:
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.4);
+      case MediaState.available:
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
+      case MediaState.unknown:
+      default:
+        return Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+    }
+  }
+
+  /// 音量控制 - 集成自主页Dashboard的MD3风格设计
+  Widget _buildVolumeControl(BuildContext context) {
+    final volumeState = ref.watch(volumeStateProvider);
+    
+    // 优先使用用户正在拖动的本地值，否则使用来自Provider的权威值
+    final displayVolume = _localVolume ?? volumeState.volume;
+
+    // 当没有从PC获取到任何值时，控件处于禁用状态
+    final bool isDisabled = volumeState.volume == null;
+
+    // 连接状态监听
+    final connectionStatus = ref.watch(connectionStatusProvider);
+
+    // MD3 统一主题色
+    const primaryColor = Color(0xFF6750A4); // MD3 Primary
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
@@ -339,183 +629,103 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
           color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
           width: 1,
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildMediaButton(
-            context, 
-            Icons.skip_previous_rounded, 
-            '上一首', 
-            () => _sendMediaControl('previous'),
-            isSecondary: true,
-          ),
-          _buildMediaButton(
-            context,
-            mediaStatus.isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
-            mediaStatus.isPlaying ? '暂停' : '播放',
-            () => _sendMediaControl('play_pause'),
-            isPrimary: true,
-          ),
-          _buildMediaButton(
-            context, 
-            Icons.skip_next_rounded, 
-            '下一首', 
-            () => _sendMediaControl('next'),
-            isSecondary: true,
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-    );
-  }
-
-  /// 媒体控制按钮 - Material Design 3风格
-  Widget _buildMediaButton(
-    BuildContext context, 
-    IconData icon, 
-    String tooltip, 
-    VoidCallback onPressed, {
-    bool isPrimary = false,
-    bool isSecondary = false,
-  }) {
-    const mediaColor = Color(0xFFE91E63);
-    
-    // 根据按钮类型设置样式
-    Color iconColor;
-    Color backgroundColor;
-    double iconSize;
-    double containerSize;
-    
-    if (isPrimary) {
-      // 主要播放按钮
-      iconColor = Colors.white;
-      backgroundColor = mediaColor;
-      iconSize = 32.0;
-      containerSize = 64.0;
-    } else if (isSecondary) {
-      // 次要控制按钮
-      iconColor = mediaColor;
-      backgroundColor = mediaColor.withOpacity(0.12);
-      iconSize = 28.0;
-      containerSize = 56.0;
-    } else {
-      // 默认按钮
-      iconColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
-      backgroundColor = Colors.transparent;
-      iconSize = 24.0;
-      containerSize = 48.0;
-    }
-
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(containerSize / 2),
-          child: Container(
-            width: containerSize,
-            height: containerSize,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              shape: BoxShape.circle,
-              boxShadow: isPrimary ? [
-                BoxShadow(
-                  color: mediaColor.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ] : null,
-            ),
-            child: Icon(
-              icon, 
-              color: iconColor, 
-              size: iconSize,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 音量控制
-  Widget _buildVolumeControl(BuildContext context) {
-    final volumeState = ref.watch(volumeStateProvider);
-    
-    // 添加严格的数值验证和异常安全保护
-    double volume = 0.0; // 默认值
-    
-    if (volumeState.volume != null) {
-      final rawVolume = volumeState.volume!;
-      
-      // 检查是否为有效的有限数值
-      if (rawVolume.isFinite && !rawVolume.isNaN) {
-        // 确保值在有效范围内 (0.0 - 1.0)
-        volume = rawVolume.clamp(0.0, 1.0);
-      } else {
-        // 无效数值时使用默认值并记录警告
-        LogService.instance.warning('音量值无效: $rawVolume，使用默认值0.0', category: 'UI');
-      }
-    }
-
-    // 移除冗余调试信息
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.onSurface.withAlpha((0.12 * 255).round()),
-          width: 1,
-        ),
-      ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Icon(
+                  volumeState.isMuted 
+                    ? Icons.volume_off_rounded 
+                    : Icons.volume_up_rounded,
+                  color: primaryColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '系统音量',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    displayVolume != null 
+                        ? '${displayVolume.round()}%'
+                        : (connectionStatus == ConnectionStatus.connected ? '获取中...' : '--'),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             Row(
               children: [
                 _buildVolumeButton(
                   context,
-                  volumeState.isMuted ? Icons.volume_off : Icons.volume_down,
-                  '静音/取消静音',
-                  () => _sendMediaControl('mute'),
-                  color: volumeState.isMuted
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.onSurface.withAlpha((0.6 * 255).round()),
+                  volumeState.isMuted ? Icons.volume_off_rounded : Icons.volume_down_rounded,
+                  volumeState.isMuted ? '取消静音' : '音量减',
+                  isDisabled ? null : () {
+                    if (volumeState.isMuted) {
+                      _sendMediaControl('mute'); // 取消静音
+                    } else {
+                      _adjustVolume(-10); // 音量减
+                    }
+                  },
+                  primaryColor: primaryColor,
                 ),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Slider(
-                    value: volume, // 使用经过验证的安全数值
-                    min: 0.0,
-                    max: 1.0,
-                    divisions: 20,
-                    onChanged: (value) {
-                      // 再次验证用户输入的值
-                      if (value.isFinite && !value.isNaN) {
-                        final safeValue = value.clamp(0.0, 1.0);
-                        _setSystemVolume(safeValue);
-                      }
-                    },
-                    onChangeEnd: (value) {
-                      if (value.isFinite && !value.isNaN) {
-                        _requestVolumeStatusDelayed();
-                      }
-                    },
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 8,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+                      activeTrackColor: isDisabled ? Colors.grey : primaryColor,
+                      inactiveTrackColor: isDisabled ? Colors.grey.withOpacity(0.2) : primaryColor.withOpacity(0.2),
+                      thumbColor: isDisabled ? Colors.grey : primaryColor,
+                      overlayColor: isDisabled ? Colors.grey.withOpacity(0.2) : primaryColor.withOpacity(0.2),
+                    ),
+                    child: Slider(
+                      value: isDisabled ? 0.0 : (displayVolume ?? 0.0),
+                      min: 0.0,
+                      max: 100.0,
+                      onChanged: isDisabled ? null : (value) {
+                        setState(() {
+                          _localVolume = value;
+                        });
+                        _adjustVolumeWithDebounce(value);
+                      },
+                    ),
                   ),
                 ),
+                const SizedBox(width: 12),
                 _buildVolumeButton(
                   context,
-                  Icons.volume_up,
-                  '音量+',
-                  () {
-                    // 安全的音量增加操作
-                    final safeCurrentVolume = volume.clamp(0.0, 1.0);
-                    final newVolume = (safeCurrentVolume + 0.05).clamp(0.0, 1.0);
-                    _setSystemVolume(newVolume);
-                    _requestVolumeStatusDelayed();
-                  },
+                  Icons.volume_up_rounded,
+                  '音量加',
+                  isDisabled ? null : () => _adjustVolume(10),
+                  primaryColor: primaryColor,
                 ),
               ],
             ),
@@ -525,13 +735,30 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
     );
   }
 
-  /// 音量调节按钮
-  Widget _buildVolumeButton(BuildContext context, IconData icon, String tooltip, VoidCallback onPressed, {Color? color}) {
-    return IconButton(
-      icon: Icon(icon, color: color ?? Theme.of(context).colorScheme.onSurface.withAlpha((0.6 * 255).round())),
-      tooltip: tooltip,
-      onPressed: onPressed,
-      iconSize: 28,
+  /// MD3风格的音量按钮
+  Widget _buildVolumeButton(BuildContext context, IconData icon, String tooltip, VoidCallback? onPressed, {required Color primaryColor}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: onPressed != null 
+              ? primaryColor.withOpacity(0.1)
+              : Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: onPressed != null 
+              ? primaryColor
+              : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+            size: 20,
+          ),
+        ),
+      ),
     );
   }
 
@@ -676,6 +903,29 @@ class _ControlScreenState extends ConsumerState<ControlScreen> {
         ),
       ),
     );
+  }
+
+  /// 音量调节方法 - 从主页Dashboard复制
+  void _adjustVolume(double delta) {
+    final currentVolume = _localVolume ?? ref.read(volumeStateProvider).volume ?? 0.0;
+    final newVolume = (currentVolume + delta).clamp(0.0, 100.0);
+    
+    setState(() {
+      _localVolume = newVolume;
+    });
+    
+    _adjustVolumeWithDebounce(newVolume);
+  }
+
+  void _adjustVolumeWithDebounce(double volume) {
+    _volumeDebounceTimer?.cancel();
+    _volumeDebounceTimer = Timer(const Duration(milliseconds: 200), () {
+      final message = ControlMessage.mediaControl(
+        messageId: DateTime.now().millisecondsSinceEpoch.toString(),
+        action: 'set_volume:${(volume / 100).toStringAsFixed(2)}',
+      );
+      _sendControlMessage(message);
+    });
   }
 }
 
