@@ -238,27 +238,38 @@ namespace PalmControllerServer
                 AddLogMessage($"设备已连接：{clientId[..8]}...");
             });
 
-            // 直接从 SystemControlService 获取实时音量并发送
-            var initialVolume = _systemControlService.GetSystemVolume(); // 获取实时音量
-            var initialMute = _systemControlService.GetMuteState();   // 获取实时静音状态
+            // 🔧 修复：简化初始音量状态发送，避免消息冲突
+            try
+            {
+                // 稍等一会儿，确保客户端连接完全建立
+                await System.Threading.Tasks.Task.Delay(500);
+                
+                // 直接从 SystemControlService 获取实时音量并发送
+                var initialVolume = _systemControlService.GetSystemVolume(); // 获取实时音量
+                var initialMute = _systemControlService.GetMuteState();   // 获取实时静音状态
 
-            // 构造 ControlMessage
-            var volumeStatusMessage = Models.ControlMessage.CreateVolumeStatus(
-                Guid.NewGuid().ToString(),
-                initialVolume,
-                initialMute
-            );
-            // 通过 SocketServer 发送给特定客户端
-            await _socketServer.SendMessageToClientAsync(clientId, volumeStatusMessage);
-            LogService.Instance.Info($"Sent initial volume status to client {clientId}: {initialVolume:P0}, Muted: {initialMute}", "Socket");
-
-            // 下面这部分广播可以考虑移除或保留，但上面的直接发送应该更准确
-            // 如果保留，确保它不会立即覆盖上面发送的特定状态，或者它的目的是更新 SocketServer 的内部缓存
-            // 为了清晰起见，暂时注释掉这个立即的广播，因为 VolumeChanged 事件应该会处理后续变化
-            // await System.Threading.Tasks.Task.Delay(500);
-            // var currentVolume = _systemControlService.GetSystemVolume();
-            // var currentMute = _systemControlService.GetMuteState();
-            // await _socketServer.BroadcastVolumeStatusAsync(currentVolume, currentMute);
+                // 构造 ControlMessage
+                var volumeStatusMessage = Models.ControlMessage.CreateVolumeStatus(
+                    Guid.NewGuid().ToString(),
+                    initialVolume,
+                    initialMute
+                );
+                
+                // 通过 SocketServer 发送给特定客户端
+                var sendSuccess = await _socketServer.SendMessageToClientAsync(clientId, volumeStatusMessage);
+                if (sendSuccess)
+                {
+                    LogService.Instance.Info($"Sent initial volume status to client {clientId}: {initialVolume:P0}, Muted: {initialMute}", "Socket");
+                }
+                else
+                {
+                    LogService.Instance.Warning($"Failed to send initial volume status to client {clientId}", "Socket");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogService.Instance.Error($"Error sending initial volume status to client {clientId}", ex, "Socket");
+            }
         }
 
         private void OnClientDisconnected(string clientId)

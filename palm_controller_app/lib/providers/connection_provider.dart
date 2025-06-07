@@ -244,9 +244,11 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
     _connectionStatusSubscription = socketService.statusStream.listen((status) {
       // 只在从非连接状态变为连接状态时请求音量状态
       if (status == ConnectionStatus.connected && _lastConnectionStatus != ConnectionStatus.connected) {
-        // 延迟500ms再请求音量状态，确保连接完全建立
-        Future.delayed(const Duration(milliseconds: 500), () {
-          _requestVolumeStatus();
+        // 🔧 修复：简化为单次请求，避免多重异步操作冲突
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted && _ref.read(socketServiceProvider).currentStatus == ConnectionStatus.connected) {
+            _requestVolumeStatus();
+          }
         });
       }
       // 连接断开时重置音量状态为未知状态
@@ -272,15 +274,23 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
 
   void _handleVolumeStatusMessage(ControlMessage message) {
     try {
+      // 🔧 添加详细调试日志
+      print('🎵 VolumeStateNotifier收到音量状态消息: ${message.payload}');
+      
       if (message.payload['volume'] != null) {
-        final newVolume = (message.payload['volume'] as num).toDouble();
+        final newVolume = (message.payload['volume'] as num).toDouble() * 100; // 🔧 修复：PC端发送0-1范围，需要转换为0-100
         final newMuteState = message.payload['muted'] as bool? ?? false;
+        
+        print('🎵 解析音量数据: volume=${newVolume}%, muted=$newMuteState');
+        
         if (mounted) {
           state = state.copyWith(volume: newVolume, isMuted: newMuteState);
+          print('🎵 音量状态已更新: ${state.toString()}');
         }
       }
     } catch (e) {
       LogService.instance.error('Error parsing volume_status: $e', category: 'VolumeState');
+      print('❌ 音量状态解析失败: $e');
     }
   }
 
@@ -315,6 +325,8 @@ class VolumeStateNotifier extends StateNotifier<VolumeState> {
   Future<void> refreshVolumeStatus() async {
     await _requestVolumeStatus();
   }
+
+
 
   @override
   void dispose() {

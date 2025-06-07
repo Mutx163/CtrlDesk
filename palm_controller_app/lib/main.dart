@@ -80,77 +80,59 @@ class PalmControllerApp extends ConsumerWidget {
     );
   }
 
-  /// 构建浅色主题 - 现代化设计语言
+  /// 构建浅色主题 - Material Design 3 设计语言
   ThemeData _buildLightTheme() {
-    const primaryColor = Color(0xFF1976D2); // 更温和的蓝色
-    const surfaceColor = Color(0xFFFAFAFA); // 温和的背景色
+    // MD3 色彩种子 - 温和现代的蓝色
+    const seedColor = Color(0xFF6750A4); // MD3 Primary Purple
+    
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.light,
+    );
     
     return ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        brightness: Brightness.light,
-        surface: surfaceColor,
-      ),
+      colorScheme: colorScheme,
       useMaterial3: true,
       
-      // AppBar 现代化设计
+      // AppBar MD3设计
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 1,
         backgroundColor: Colors.transparent,
-        foregroundColor: primaryColor,
-        titleTextStyle: const TextStyle(
+        foregroundColor: colorScheme.primary,
+        titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: primaryColor,
+          color: colorScheme.primary,
         ),
-        iconTheme: const IconThemeData(
-          color: primaryColor,
+        iconTheme: IconThemeData(
+          color: colorScheme.primary,
           size: 24,
         ),
       ),
       
-      // Card 现代化设计
+      // Card MD3设计
       cardTheme: CardTheme(
-        elevation: 0,
-        color: Colors.white,
-        surfaceTintColor: Colors.transparent,
+        elevation: 1,
+        color: colorScheme.surface,
+        surfaceTintColor: colorScheme.surfaceTint,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Colors.grey.shade200,
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(12),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       ),
       
-      // 按钮现代化设计
+      // 按钮MD3设计
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          elevation: 1,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      
-      // 文本按钮设计
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
           textStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -158,120 +140,117 @@ class PalmControllerApp extends ConsumerWidget {
         ),
       ),
       
-      // 输入框现代化设计
+      // 文本按钮MD3设计
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: colorScheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+      
+      // 输入框MD3设计
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceColor,
+        fillColor: colorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       
-      // Chip 现代化设计
+      // Chip MD3设计
       chipTheme: ChipThemeData(
-        backgroundColor: surfaceColor,
-        selectedColor: primaryColor.withAlpha((0.1 * 255).round()),
-        side: BorderSide(color: Colors.grey.shade300),
+        backgroundColor: colorScheme.surfaceContainerLow,
+        selectedColor: colorScheme.secondaryContainer,
+        side: BorderSide(color: colorScheme.outline),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        labelStyle: const TextStyle(
+        labelStyle: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
+          color: colorScheme.onSurface,
         ),
       ),
       
-      // 分割线设计
+      // 分割线MD3设计
       dividerTheme: DividerThemeData(
-        color: Colors.grey.shade200,
+        color: colorScheme.outlineVariant,
         thickness: 1,
         space: 1,
       ),
     );
   }
 
-  /// 构建深色主题 - 现代化设计语言
+  /// 构建深色主题 - Material Design 3 设计语言
   ThemeData _buildDarkTheme() {
-    const primaryColor = Color(0xFF64B5F6); // 适合深色的蓝色
-    const surfaceColor = Color(0xFF1E1E1E); // 深色背景
-    const cardColor = Color(0xFF2D2D2D); // 卡片背景
+    // MD3 色彩种子 - 与浅色主题一致
+    const seedColor = Color(0xFF6750A4); // MD3 Primary Purple
+    
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: Brightness.dark,
+    );
     
     return ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        brightness: Brightness.dark,
-        surface: surfaceColor,
-      ),
+      colorScheme: colorScheme,
       useMaterial3: true,
       
-      // AppBar 深色设计
+      // AppBar MD3深色设计
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 1,
         backgroundColor: Colors.transparent,
-        foregroundColor: primaryColor,
-        titleTextStyle: const TextStyle(
+        foregroundColor: colorScheme.primary,
+        titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: primaryColor,
+          color: colorScheme.primary,
         ),
-        iconTheme: const IconThemeData(
-          color: primaryColor,
+        iconTheme: IconThemeData(
+          color: colorScheme.primary,
           size: 24,
         ),
       ),
       
-      // Card 深色设计
+      // Card MD3深色设计
       cardTheme: CardTheme(
-        elevation: 0,
-        color: cardColor,
-        surfaceTintColor: Colors.transparent,
+        elevation: 1,
+        color: colorScheme.surface,
+        surfaceTintColor: colorScheme.surfaceTint,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Colors.grey.shade700,
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(12),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       ),
       
-      // 按钮深色设计
+      // 按钮MD3深色设计
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.black,
-          elevation: 0,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          elevation: 1,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      
-      // 文本按钮深色设计
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
           textStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -279,42 +258,58 @@ class PalmControllerApp extends ConsumerWidget {
         ),
       ),
       
-      // 输入框深色设计
+      // 文本按钮MD3深色设计
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: colorScheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+      
+      // 输入框MD3深色设计
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: cardColor,
+        fillColor: colorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade600),
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade600),
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       
-      // Chip 深色设计
+      // Chip MD3深色设计
       chipTheme: ChipThemeData(
-        backgroundColor: cardColor,
-        selectedColor: primaryColor.withAlpha((0.1 * 255).round()),
-        side: BorderSide(color: Colors.grey.shade600),
+        backgroundColor: colorScheme.surfaceContainerLow,
+        selectedColor: colorScheme.secondaryContainer,
+        side: BorderSide(color: colorScheme.outline),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        labelStyle: const TextStyle(
+        labelStyle: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
+          color: colorScheme.onSurface,
         ),
       ),
       
-      // 分割线深色设计
+      // 分割线MD3深色设计
       dividerTheme: DividerThemeData(
-        color: Colors.grey.shade700,
+        color: colorScheme.outlineVariant,
         thickness: 1,
         space: 1,
       ),

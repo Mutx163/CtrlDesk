@@ -130,6 +130,11 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface, // 统一背景色
+      appBar: AppBar(
+        title: const Text('应用设置'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: _buildSettingsInterface(context, settings, settingsNotifier),
     );
   }
@@ -138,11 +143,6 @@ class SettingsScreen extends ConsumerWidget {
   Widget _buildSettingsInterface(BuildContext context, AppSettings settings, SettingsNotifier settingsNotifier) {
     return CustomScrollView(
       slivers: [
-        // 设置头部
-        SliverToBoxAdapter(
-          child: _buildSettingsHeader(context),
-        ),
-        
         // 原有设置内容
         SliverToBoxAdapter(
           child: _buildOldSettings(context, settings, settingsNotifier),
@@ -156,69 +156,10 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  /// 设置页面头部
-  Widget _buildSettingsHeader(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF607D8B).withAlpha(((0.1) * 255).round()),
-            const Color(0xFF455A64).withAlpha(((0.05) * 255).round()),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFF607D8B).withAlpha(((0.2) * 255).round()),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          // 设置图标
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF607D8B).withAlpha(((0.1) * 255).round()),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.settings_rounded,
-              color: Color(0xFF607D8B),
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
-          
-          // 标题和描述
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '应用设置',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF607D8B),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '个性化您的掌控者体验',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withAlpha(((0.7) * 255).round()),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Material Design 3 统一主题色 - 与仪表板保持一致
+  static const primaryColor = Color(0xFF6750A4); // MD3 Primary
+
+
 
   Widget _buildOldSettings(BuildContext context, AppSettings settings, SettingsNotifier settingsNotifier) {
     return ListView(
@@ -327,27 +268,41 @@ class SettingsScreen extends ConsumerWidget {
     required IconData icon,
     required List<Widget> children,
   }) {
-    return Card(
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             child: Row(
               children: [
                 Icon(
                   icon,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                  color: primaryColor,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600,
+                    color: primaryColor,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],

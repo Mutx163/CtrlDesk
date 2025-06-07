@@ -46,6 +46,10 @@ class SocketService {
   
   // JSON消息缓冲区 - 处理TCP拆分传输
   final StringBuffer _messageBuffer = StringBuffer();
+  
+  // 🔧 修复：添加并发控制机制，避免StreamSink冲突
+  final List<ControlMessage> _sendQueue = [];
+  bool _isSending = false;
 
   // 连接到PC端
   Future<bool> connect(ConnectionConfig config) async {
@@ -185,6 +189,10 @@ class SocketService {
       port: _socket?.remotePort ?? 0,
     );
     
+    // 🔧 修复：断开连接时清空发送队列
+    _sendQueue.clear();
+    _isSending = false;
+    
     _stopHeartbeat();
     await _socketSubscription?.cancel();
     _socketSubscription = null;
@@ -193,13 +201,47 @@ class SocketService {
     _updateStatus(ConnectionStatus.disconnected);
   }
 
-  // 发送消息
+  // 发送消息 - 使用队列机制避免并发冲突
   Future<bool> sendMessage(ControlMessage message) async {
     if (_socket == null || _currentStatus != ConnectionStatus.connected) {
       _lastError = 'Socket not connected';
       return false;
     }
 
+    // 🔧 修复：将消息添加到队列，避免并发发送
+    _sendQueue.add(message);
+    return await _processSendQueue();
+  }
+
+  // 🔧 修复：处理发送队列，确保串行发送
+  Future<bool> _processSendQueue() async {
+    if (_isSending || _sendQueue.isEmpty) {
+      return true; // 如果正在发送或队列为空，直接返回
+    }
+
+    _isSending = true;
+    bool allSuccessful = true;
+
+    try {
+      while (_sendQueue.isNotEmpty) {
+        final message = _sendQueue.removeAt(0);
+        final success = await _sendSingleMessage(message);
+        if (!success) {
+          allSuccessful = false;
+          // 发送失败时，清空队列避免积压
+          _sendQueue.clear();
+          break;
+        }
+      }
+    } finally {
+      _isSending = false;
+    }
+
+    return allSuccessful;
+  }
+
+  // 🔧 修复：发送单个消息，原始的发送逻辑
+  Future<bool> _sendSingleMessage(ControlMessage message) async {
     try {
       final jsonString = jsonEncode(message.toJson());
       final data = utf8.encode('$jsonString\n');
@@ -256,7 +298,8 @@ class SocketService {
           e.toString().contains('Broken pipe') || 
           e.toString().contains('Connection refused') ||
           e.toString().contains('Connection reset') ||
-          e.toString().contains('Socket is closed')) {
+          e.toString().contains('Socket is closed') ||
+          e.toString().contains('StreamSink is bound to a stream')) {
         _updateStatus(ConnectionStatus.error);
       }
       
