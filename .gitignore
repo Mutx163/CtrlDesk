@@ -1,3 +1,15 @@
+# ==========================================
+# CtrlDesk 项目 .gitignore 配置
+# ==========================================
+
+# === AI项目管理文件 (内部开发文件) ===
+.project_ai_knowledge/
+path=.project_ai_knowledge/
+
+# === 临时开发文件夹 ===
+temp_syncpad/
+githubopen/
+
 # === Flutter/Dart related ===
 palm_controller_app/.dart_tool/
 palm_controller_app/.flutter-plugins
@@ -9,8 +21,14 @@ palm_controller_app/ios/Flutter/.last_build_id
 palm_controller_app/android/app/debug
 palm_controller_app/android/app/profile
 palm_controller_app/android/app/release
+palm_controller_app/.metadata
+palm_controller_app/pubspec.lock
+palm_controller_app/*.iml
+palm_controller_app/flutter_analysis.log
+palm_controller_app/test_udp_simple.dart
+palm_controller_app/devtools_options.yaml
 
-# === .NET related ===
+# === .NET/C# Server related ===
 PalmControllerServer/bin/
 PalmControllerServer/obj/
 PalmControllerServer/*.user
@@ -25,15 +43,25 @@ PalmControllerServer/packages/
 PalmControllerServer/*.nupkg
 PalmControllerServer/*.snupkg
 
-# === IDE and OS ===
+# === IDE and Development Tools ===
 .vs/
-.vscode/launch.json
-.vscode/tasks.json
+.vscode/
+.idea/
+.cursor/
 *.swp
 *.swo
 *~
+*.iml
+*.ipr
+*.iws
+
+# === OS specific ===
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# === VS Code workspace files ===
+*.code-workspace
 
 # === Logs and temp files ===
 *.log
@@ -41,12 +69,22 @@ Thumbs.db
 *.temp
 logs/
 
-# === Project AI Knowledge (可选) ===
-.project_ai_knowledge/
-
 # === Windows specific ===
 *.exe
 *.dll
 *.pdb
 !PalmControllerServer/*.dll
-!PalmControllerServer/*.exe 
+!PalmControllerServer/*.exe
+
+# === Mobile development ===
+*.keystore
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+
+# === Environment and Config ===
+.env
+.env.local
+.env.*.local
+config/secrets.json
